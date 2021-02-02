@@ -1,0 +1,34 @@
+plugins {
+  id 'application'
+}
+
+application {
+  mainModule = 'joev.ya6s'
+  mainClass = 'joev.ya6s.Main'
+}
+
+java {
+  modularity.inferModulePath.set(true)
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+  testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
+  testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+compileJava {
+  options.compilerArgs += ['-Xlint:all', '-Werror']
+}
+
+compileTestJava {
+  options.compilerArgs += ['-Xlint:all', '-Werror']
+}
+
+test {
+  useJUnitPlatform()
+}
