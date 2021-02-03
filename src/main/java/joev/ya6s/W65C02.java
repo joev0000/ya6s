@@ -64,6 +64,9 @@ public class W65C02 {
     R_AD_DISCARD_MODIFY,
     R_AD_AAL,
     R_AD_AAH,
+    R_AD_X_AAL,
+    R_AD_X_AAH,
+    RW_AA_OPERAND,
     RW_AA_Y_OPERAND,
     R_S_DISCARD,
     W_S_PCH,
@@ -129,6 +132,14 @@ public class W65C02 {
     R_AD_AAL,
     R_AD_AAH,
     RW_AA_Y_OPERAND,
+    END
+  };
+  private static final Step[] S_ZERO_PAGE_INDIRECT = new Step[] {
+    R_PC_ADZ,
+    R_PC_DISCARD,
+    R_AD_X_AAL,
+    R_AD_X_AAH,
+    RW_AA_OPERAND,
     END
   };
 
@@ -281,6 +292,7 @@ public class W65C02 {
           break;
         case IMPLIED: steps[opcode] = S_IMPLIED; break;
         case INDEXED_ZP_Y: steps[opcode] = S_ZERO_PAGE_INDEXED; break;
+        case INDIRECT_ZP_X: steps[opcode] = S_ZERO_PAGE_INDIRECT; break;
       }
     }
     steps[0xDB] = S_STOP;
@@ -516,15 +528,20 @@ public class W65C02 {
           aah++;  // TODO: page boundary?
         aal += y;
         switch(instructions[opcode & 0xFF]) {
-          case STA, STX, STY:
-            write(aal, aah, operand); break;
-          case STZ:
-            write(aal, aah, (byte)0); break;
-        default:
-          operand = read(aal, aah);
+          case STA, STX, STY: write(aal, aah, operand); break;
+          case STZ:           write(aal, aah, (byte)0); break;
+          default:            operand = read(aal, aah);
         }
         break;
-
+      case R_AD_X_AAL: aal = read((byte)(x + adl), adh); adl++; break;
+      case R_AD_X_AAH: aah = read(adl, adh); break;
+      case RW_AA_OPERAND:
+        switch(instructions[opcode & 0xFF]) {
+          case STA, STX, STY: write(aal, aah, operand); break;
+          case STZ:           write(aal, aah, (byte)0); break;
+          default:            operand = read(aal, aah);
+        }
+        break;
       case END:
         instruction = instructions[opcode & 0xFF];
         switch(instruction) {
