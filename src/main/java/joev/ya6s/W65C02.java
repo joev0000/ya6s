@@ -149,6 +149,14 @@ public class W65C02 {
     RW_AD_X_OPERAND,
     END
   };
+  private static final Step[] S_ZERO_PAGE_X_RMW = new Step[] {
+    R_PC_ADZ,
+    R_PC_DISCARD,
+    RW_AD_X_OPERAND,
+    R_AD_DISCARD_MODIFY,
+    W_AD_OPERAND,
+    END
+  };
 
   /**
    * The list of instructions.
@@ -300,7 +308,14 @@ public class W65C02 {
         case IMPLIED: steps[opcode] = S_IMPLIED; break;
         case INDEXED_ZP_Y: steps[opcode] = S_ZERO_PAGE_INDEXED; break;
         case INDIRECT_ZP_X: steps[opcode] = S_ZERO_PAGE_INDIRECT; break;
-        case ZERO_PAGE_X: steps[opcode] = S_ZERO_PAGE_X; break;
+        case ZERO_PAGE_X:
+          switch(instructions[opcode]) {
+            case ASL, ROL, LSR, ROR, INC, DEC:
+              steps[opcode] = S_ZERO_PAGE_X_RMW; break;
+            default:
+            steps[opcode] = S_ZERO_PAGE_X; break;
+          }
+          break;
       }
     }
     steps[0xDB] = S_STOP;

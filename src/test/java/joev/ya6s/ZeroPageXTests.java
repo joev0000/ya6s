@@ -27,7 +27,12 @@ public class ZeroPageXTests {
       params("LDA", "A2 06 B5 03", 6,
         Assertions::assertNotZero,
         Assertions::assertNotNegative,
-        Assertions.assertA(0x37))
+        Assertions.assertA(0x37)),
+
+      params("ASL", "A2 07 16 03", 8,
+        Assertions::assertNotZero,
+        Assertions::assertNegative,
+        Assertions.assertMemory(0x000A, 0xB2))
     );
   }
 }
