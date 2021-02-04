@@ -69,6 +69,7 @@ public class W65C02 {
     RW_AA_OPERAND,
     RW_AA_Y_OPERAND,
     RW_AD_X_OPERAND,
+    RW_AD_Y_OPERAND,
     R_S_DISCARD,
     W_S_PCH,
     W_S_PCL,
@@ -155,6 +156,12 @@ public class W65C02 {
     RW_AD_X_OPERAND,
     R_AD_DISCARD_MODIFY,
     W_AD_OPERAND,
+    END
+  };
+  private static final Step[] S_ZERO_PAGE_Y = new Step[] {
+    R_PC_ADZ,
+    R_PC_DISCARD,
+    RW_AD_Y_OPERAND,
     END
   };
 
@@ -316,6 +323,7 @@ public class W65C02 {
             steps[opcode] = S_ZERO_PAGE_X; break;
           }
           break;
+        case ZERO_PAGE_Y: steps[opcode] = S_ZERO_PAGE_Y; break;
       }
     }
     steps[0xDB] = S_STOP;
@@ -571,6 +579,13 @@ public class W65C02 {
           case STA, STX, STY: write(adl, (byte)0, operand); break;
           case STZ:           write(adl, (byte)0, (byte)0); break;
           default:            operand = read(adl, (byte)0); break;
+        }
+        break;
+      case RW_AD_Y_OPERAND:
+        adl += y;
+        switch(instructions[opcode & 0xFF]) {
+          case STX: write(adl, (byte)0, operand); break;
+          default: operand = read(adl, (byte)0);
         }
         break;
       case END:
