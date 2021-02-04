@@ -61,6 +61,7 @@ public class W65C02 {
     R_PC_DISCARD,
     RW_AD_OPERAND,
     R_AD_OPERAND,
+    R_AD_DISCARD,
     R_AD_DISCARD_MODIFY,
     R_AD_AAL,
     R_AD_AAH,
@@ -164,6 +165,28 @@ public class W65C02 {
     RW_AD_Y_OPERAND,
     END
   };
+  private static final Step[] S_ABSOLUTE_X = new Step[] {
+    R_PC_ADL,
+    R_PC_ADH,
+    RW_AD_X_OPERAND,
+    END
+  };
+  private static final Step[] S_ABSOLUTE_X_RMW = new Step[] {
+    R_PC_ADL,
+    R_PC_ADH,
+    RW_AD_X_OPERAND,
+    R_AD_DISCARD,
+    R_AD_DISCARD_MODIFY,
+    W_AD_OPERAND,
+    END
+  };
+  private static final Step[] S_ABSOLUTE_Y = new Step[] {
+    R_PC_ADL,
+    R_PC_ADH,
+    RW_AD_Y_OPERAND,
+    END
+  };
+
 
   /**
    * The list of instructions.
@@ -324,6 +347,15 @@ public class W65C02 {
           }
           break;
         case ZERO_PAGE_Y: steps[opcode] = S_ZERO_PAGE_Y; break;
+        case ABSOLUTE_X:
+          switch(instructions[opcode]) {
+            case ASL, ROL, LSR, ROR, INC, DEC:
+              steps[opcode] = S_ABSOLUTE_X_RMW; break;
+            default:
+              steps[opcode] = S_ABSOLUTE_X; break;
+          }
+          break;
+        case ABSOLUTE_Y: steps[opcode] = S_ABSOLUTE_Y; break;
       }
     }
     steps[0xDB] = S_STOP;
@@ -531,6 +563,7 @@ public class W65C02 {
         }
         break;
       case R_AD_OPERAND: operand = read(adl, adh); break;
+      case R_AD_DISCARD: read(adl, adh); break;
       case R_AD_DISCARD_MODIFY:
         read(adl, adh);
         switch(instructions[opcode & 0xFF]) {
@@ -574,18 +607,28 @@ public class W65C02 {
         }
         break;
       case RW_AD_X_OPERAND:
+        if(((((adl & x) | ((adl ^ x) & ~(adl + x))) & 0x80) != 0) &&
+            (addressingModes[opcode & 0xFF] & 0x40) == 0) {
+          adh++;
+          // TODO add page boundary cycle
+        }
         adl += x;
         switch(instructions[opcode & 0xFF]) {
-          case STA, STX, STY: write(adl, (byte)0, operand); break;
-          case STZ:           write(adl, (byte)0, (byte)0); break;
-          default:            operand = read(adl, (byte)0); break;
+          case STA, STX, STY: write(adl, adh, operand); break;
+          case STZ:           write(adl, adh, (byte)0); break;
+          default:            operand = read(adl, adh); break;
         }
         break;
       case RW_AD_Y_OPERAND:
+        if(((((adl & y) | ((adl ^ y) & ~(adl + y))) & 0x80) != 0) &&
+            (addressingModes[opcode & 0xFF] & 0x40) == 0) {
+          adh++;
+          // TODO add page boundary cycle
+        }
         adl += y;
         switch(instructions[opcode & 0xFF]) {
-          case STX: write(adl, (byte)0, operand); break;
-          default: operand = read(adl, (byte)0);
+          case STA, STX: write(adl, adh, operand); break;
+          default: operand = read(adl, adh);
         }
         break;
       case END:
