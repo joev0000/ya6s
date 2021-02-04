@@ -54,11 +54,13 @@ public class W65C02 {
   enum Step {
     END,
     R_PC_OPERAND,
+    R_PC_OPERAND_BRANCH,
     R_PC_ADL,
     R_PC_ADH,
     R_PC_ADZ,
     R_PC_PCH,
     R_PC_DISCARD,
+    R_PC_DISCARD_SET_PC,
     RW_AD_OPERAND,
     R_AD_OPERAND,
     R_AD_DISCARD,
@@ -184,6 +186,11 @@ public class W65C02 {
     R_PC_ADL,
     R_PC_ADH,
     RW_AD_Y_OPERAND,
+    END
+  };
+  private static final Step[] S_RELATIVE = new Step[] {
+    R_PC_OPERAND_BRANCH,
+    R_PC_DISCARD_SET_PC,
     END
   };
 
@@ -356,6 +363,7 @@ public class W65C02 {
           }
           break;
         case ABSOLUTE_Y: steps[opcode] = S_ABSOLUTE_Y; break;
+        case RELATIVE: steps[opcode] = S_RELATIVE; break;
       }
     }
     steps[0xDB] = S_STOP;
@@ -631,6 +639,33 @@ public class W65C02 {
           default: operand = read(adl, adh);
         }
         break;
+
+      case R_PC_OPERAND_BRANCH:
+        Instruction i = instructions[opcode & 0xFF];
+        operand = read(pc++);
+        if( i == BRA ||
+           (i == BNE && ((p & ZERO)     == 0)) ||
+           (i == BEQ && ((p & ZERO)     != 0)) ||
+           (i == BCC && ((p & CARRY)    == 0)) ||
+           (i == BCS && ((p & CARRY)    != 0)) ||
+           (i == BPL && ((p & NEGATIVE) == 0)) ||
+           (i == BMI && ((p & NEGATIVE) != 0)) ||
+           (i == BVC && ((p & OVERFLOW) == 0)) ||
+           (i == BVS && ((p & OVERFLOW) != 0))) {
+          adl = (byte)((pc + operand) & 0xFF);
+          adh = (byte)((pc + operand) >> 8);
+          if(adh != (byte)((pc >> 8) & 0xFF)) {
+            // TODO: deal with page boundary crossing.
+          }
+        }
+        else {
+          step++;
+        }
+        break;
+      case R_PC_DISCARD_SET_PC:
+        read(pc);
+        pc = (short)((adh << 8) | (adl & 0xFF));
+        break;
       case END:
         instruction = instructions[opcode & 0xFF];
         switch(instruction) {
@@ -650,6 +685,27 @@ public class W65C02 {
         System.out.println("Step not yet implemented.  Stopping processor."); stopped=true;
     }
     step++;
+  }
+
+  /**
+   * Return true if adding these numbers would resut in a carry.
+   *
+   * Checks the MSB of the pameter, using the formula
+   *
+   *  (a & b) | ((a ^ b) & ~(a + b))
+   *
+   * If the bits are both 1, then we have a carry out.
+   * If the bits are both 0, then we cannot have a carry out.
+   * If one of the bits is 1, and the sum is 1, then we do not have a carry out.
+   * If one of the buts is 1, and the sum is 0, then we have a carry out: the
+   *   only way this happens is if there was a carry in.
+   *
+   * @param a the addend
+   * @param b the addend
+   * @return true if adding the parameters would result in a carry.
+   */
+  private boolean wouldCarry(byte a, byte b) {
+    return (((a & b) | ((a ^ b) & ~(a + b))) & 0x80) != 0;
   }
 
   /**
