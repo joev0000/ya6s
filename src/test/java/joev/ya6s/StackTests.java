@@ -13,7 +13,7 @@ public class StackTests {
   @BeforeEach
   void beforeEach() {
     cpu = new W65C02();
-    TestUtils.load(cpu, 0xF000, "A9 23 DB");
+    TestUtils.load(cpu, 0xF000, "A9 23 40");
     TestUtils.load(cpu, 0xFFFE, "00 F0");
   }
 
@@ -25,8 +25,9 @@ public class StackTests {
 
   static Stream<Parameters> tests() {
     return Stream.of(
-      params("BRK", "00", 9,
-        Assertions.assertA(0x23))
+      params("BRK and RTI", "00 00 A2 42", 17,
+        Assertions.assertA(0x23),
+        Assertions.assertX(0x42))
     );
   }
 }

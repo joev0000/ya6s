@@ -77,6 +77,9 @@ public class W65C02 {
     RW_AD_X_OPERAND,
     RW_AD_Y_OPERAND,
     R_S_DISCARD,
+    R_S_PCH,
+    R_S_PCL,
+    R_S_P,
     W_S_PCH,
     W_S_PCL,
     W_S_P,
@@ -220,6 +223,14 @@ public class W65C02 {
     W_S_P,
     R_FFFE_PCL,
     R_FFFF_PCH,
+    END
+  };
+  private static final Step[] S_STACK_RTI = new Step[] {
+    R_PC_DISCARD,
+    R_S_DISCARD,
+    R_S_P,
+    R_S_PCL,
+    R_S_PCH,
     END
   };
 
@@ -397,6 +408,7 @@ public class W65C02 {
       }
     }
     steps[0x00] = S_STACK_BRK;
+    steps[0x40] = S_STACK_RTI;
     steps[0xDB] = S_STOP;
   }
   private short pc;
@@ -625,6 +637,9 @@ public class W65C02 {
       case W_S_PCH: write((short)(0x100 + s), (byte)((pc >> 8) & 0xFF)); s--; break;
       case W_S_PCL: write((short)(0x100 + s), (byte)(pc & 0xFF)); s--; break;
       case W_S_P: write((short)(0x100 + s), (byte)(p | BREAK)); s--; break;
+      case R_S_PCH: s++; pc = (short)((read((short)(0x100 + s)) << 8) | (byte)(pc & 0xFF)); break;
+      case R_S_PCL: s++; pc = (short)((pc & 0xFF00) | (read((short)(0x100 + s)) & 0xFF)); break;
+      case R_S_P: s++; p = (byte)((read((short)(0x100 + s)) | 0b00100000) & ~BREAK); break;
       case R_FFFE_PCL: pc = (short)((pc & 0xFF00) | (read((short)0xFFFE) & 0xFF)); break;
       case R_FFFF_PCH: pc = (short)((read((short)0xFFFF) << 8) | (pc & 0xFF)); break;
       case R_AD_AAL: aal = read(adl++, adh); if(adl == 0) { adh++; } break;
