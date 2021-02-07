@@ -151,7 +151,7 @@ public class W65C02 {
     RW_AA_Y_OPERAND,
     END
   };
-  private static final Step[] S_ZERO_PAGE_INDIRECT = new Step[] {
+  private static final Step[] S_ZERO_PAGE_INDEXED_INDIRECT = new Step[] {
     R_PC_ADZ,
     R_PC_DISCARD,
     R_ADZ_X_AAL,
@@ -262,6 +262,13 @@ public class W65C02 {
     R_PC_DISCARD,
     R_AD_X_AAL,
     R_AD_AAH_SET_PC,
+    END
+  };
+  private static final Step[] S_ZERO_PAGE_INDIRECT = new Step[] {
+    R_PC_ADZ,
+    R_AD_AAL,
+    R_AD_AAH,
+    RW_AA_OPERAND,
     END
   };
 
@@ -420,7 +427,7 @@ public class W65C02 {
           }
           break;
         case INDEXED_ZP_Y: steps[opcode] = S_ZERO_PAGE_INDEXED; break;
-        case INDIRECT_ZP_X: steps[opcode] = S_ZERO_PAGE_INDIRECT; break;
+        case INDIRECT_ZP_X: steps[opcode] = S_ZERO_PAGE_INDEXED_INDIRECT; break;
         case ZERO_PAGE_X:
           switch(instructions[opcode]) {
             case ASL, ROL, LSR, ROR, INC, DEC:
@@ -443,6 +450,7 @@ public class W65C02 {
         case RELATIVE_ZP: steps[opcode] = S_RELATIVE_BIT; break;
         case INDIRECT: steps[opcode] = S_ABSOLUTE_INDIRECT; break;
         case INDIRECT_X: steps[opcode] = S_ABSOLUTE_INDEXED_INDIRECT; break;
+        case INDIRECT_ZP: steps[opcode] = S_ZERO_PAGE_INDIRECT; break;
       }
     }
     steps[0x00] = S_STACK_BRK;

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ZeroPageIndirectTests {
+public class ZeroPageIndexedIndirectTests {
   private W65C02 cpu;
 
   @BeforeEach
@@ -25,7 +25,7 @@ public class ZeroPageIndirectTests {
 
   static Stream<Parameters> tests() {
     return Stream.of(
-      params("LDA", "B2 8A", 5,
+      params("LDA", "A2 0A A1 80", 8,
         Assertions::assertNotZero,
         Assertions::assertNotNegative,
         Assertions.assertA(0x08))
