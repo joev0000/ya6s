@@ -76,7 +76,8 @@ public class W65C02 {
     R_S_DISCARD,
     W_S_PCH,
     W_S_PCL,
-    W_AD_OPERAND
+    W_AD_OPERAND,
+    R_PC_OPERAND_BRANCH_BIT
   }
 
   private static final Step[][] steps = new Step[256][];
@@ -193,7 +194,14 @@ public class W65C02 {
     R_PC_DISCARD_SET_PC,
     END
   };
-
+  private static final Step[] S_RELATIVE_BIT = new Step[] {
+    R_PC_ADZ,
+    R_AD_OPERAND,
+    R_AD_DISCARD,
+    R_PC_OPERAND_BRANCH_BIT,
+    R_PC_DISCARD_SET_PC,
+    END
+  };
 
   /**
    * The list of instructions.
@@ -364,6 +372,7 @@ public class W65C02 {
           break;
         case ABSOLUTE_Y: steps[opcode] = S_ABSOLUTE_Y; break;
         case RELATIVE: steps[opcode] = S_RELATIVE; break;
+        case RELATIVE_ZP: steps[opcode] = S_RELATIVE_BIT; break;
       }
     }
     steps[0xDB] = S_STOP;
@@ -665,6 +674,24 @@ public class W65C02 {
       case R_PC_DISCARD_SET_PC:
         read(pc);
         pc = (short)((adh << 8) | (adl & 0xFF));
+        break;
+      case R_PC_OPERAND_BRANCH_BIT:
+        int bit = ((opcode & 0b01110000) >> 4) & 0x07;
+        operand >>= bit;
+        operand &= 0x01;
+        if((((opcode & 0x80) == 0) && (operand == 0)) ||
+            ((opcode & 0x80) != 0) && (operand != 0)) {
+          operand = read(pc++);
+          adl = (byte)((pc + operand) & 0xFF);
+          adh = (byte)((pc + operand) >> 8);
+          if(adh != (byte)((pc >> 8) & 0xFF)) {
+            // TODO: deal with page boundary crossing.
+          }
+        }
+        else {
+          read(pc++);
+          step++;
+        }
         break;
       case END:
         instruction = instructions[opcode & 0xFF];
