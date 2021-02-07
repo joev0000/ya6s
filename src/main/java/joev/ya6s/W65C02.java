@@ -81,9 +81,11 @@ public class W65C02 {
     R_S_PCH,
     R_S_PCL,
     R_S_P,
+    R_S_REG,
     W_S_PCH,
     W_S_PCL,
     W_S_P,
+    W_S_REG,
     W_AD_OPERAND,
     R_PC_OPERAND_BRANCH_BIT
   }
@@ -242,6 +244,17 @@ public class W65C02 {
     R_PC_DISCARD_INC,
     END
   };
+  private static final Step[] S_STACK_PUSH = new Step[] {
+    R_PC_DISCARD,
+    W_S_REG,
+    END
+  };
+  private static final Step[] S_STACK_PULL = new Step[] {
+    R_PC_DISCARD,
+    R_S_DISCARD,
+    R_S_REG,
+    END
+  };
 
   /**
    * The list of instructions.
@@ -390,7 +403,13 @@ public class W65C02 {
             default:
           }
           break;
-        case IMPLIED: steps[opcode] = S_IMPLIED; break;
+        case IMPLIED:
+          switch(instructions[opcode & 0xFF]) {
+            case PHA, PHX, PHY, PHP: steps[opcode] = S_STACK_PUSH; break;
+            case PLA, PLX, PLY, PLP: steps[opcode] = S_STACK_PULL; break;
+            default: steps[opcode] = S_IMPLIED;
+          }
+          break;
         case INDEXED_ZP_Y: steps[opcode] = S_ZERO_PAGE_INDEXED; break;
         case INDIRECT_ZP_X: steps[opcode] = S_ZERO_PAGE_INDIRECT; break;
         case ZERO_PAGE_X:
@@ -648,9 +667,30 @@ public class W65C02 {
       case W_S_PCH: write((short)(0x100 + s), (byte)((pc >> 8) & 0xFF)); s--; break;
       case W_S_PCL: write((short)(0x100 + s), (byte)(pc & 0xFF)); s--; break;
       case W_S_P: write((short)(0x100 + s), (byte)(p | BREAK)); s--; break;
+      case W_S_REG:
+        switch(instructions[opcode & 0xFF]) {
+          case PHA: operand = a; break;
+          case PHX: operand = x; break;
+          case PHY: operand = y; break;
+          case PHP: operand = (byte)(p | BREAK); break;
+          default:
+        }
+        write((short)(0x100 + s), operand); s--;
+        break;
       case R_S_PCH: s++; pc = (short)((read((short)(0x100 + s)) << 8) | (byte)(pc & 0xFF)); break;
       case R_S_PCL: s++; pc = (short)((pc & 0xFF00) | (read((short)(0x100 + s)) & 0xFF)); break;
       case R_S_P: s++; p = (byte)((read((short)(0x100 + s)) | 0b00100000) & ~BREAK); break;
+      case R_S_REG:
+        s++;
+        operand = read((short)(0x100 + s));
+        switch(instructions[opcode & 0xFF]) {
+          case PLA: a = operand; setNZ(operand); break;
+          case PLX: x = operand; setNZ(operand); break;
+          case PLY: y = operand; setNZ(operand); break;
+          case PLP: p = (byte)(operand | 0b0010000); break;
+          default:
+        }
+        break;
       case R_FFFE_PCL: pc = (short)((pc & 0xFF00) | (read((short)0xFFFE) & 0xFF)); break;
       case R_FFFF_PCH: pc = (short)((read((short)0xFFFF) << 8) | (pc & 0xFF)); break;
       case R_AD_AAL: aal = read(adl++, adh); if(adl == 0) { adh++; } break;

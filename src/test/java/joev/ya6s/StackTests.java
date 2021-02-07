@@ -32,8 +32,26 @@ public class StackTests {
 
       params("RTS", "20 00 10 A2 42", 16,
         Assertions.assertA(0x23),
-        Assertions.assertX(0x42))
+        Assertions.assertX(0x42)),
+
+      params("PHY and PLX", "A0 AA 5A FA", 9,
+        Assertions::assertNegative,
+        Assertions::assertNotZero,
+        Assertions.assertX(0xAA)),
+
+      params("PHX and PLY", "A2 23 DA 7A", 9,
+        Assertions::assertNotNegative,
+        Assertions::assertNotZero,
+        Assertions.assertY(0x23)),
+
+      params("PHA and PLP", "A9 FF 48 28", 9,
+        Assertions::assertNegative,
+        Assertions::assertZero,
+        Assertions::assertInterruptDisable,
+        Assertions::assertDecimal),
+
+      params("PHP and PLA", "A9 01 38 F8 78 08 68", 15,
+        Assertions.assertA(0b00111101))  // no1BDIzC
     );
   }
 }
-
