@@ -14,6 +14,7 @@ public class JumpTests {
   void beforeEach() {
     cpu = new W65C02();
     TestUtils.load(cpu, 0x1000, "A9 23 DB");
+    TestUtils.load(cpu, 0x2000, "00 10");
   }
 
   @ParameterizedTest
@@ -25,6 +26,9 @@ public class JumpTests {
   static Stream<Parameters> tests() {
     return Stream.of(
       params("JMP", "4C 00 10", 5,
+        Assertions.assertA(0x23)),
+
+      params("JMP indirect", "6C 00 20", 7,
         Assertions.assertA(0x23))
     );
   }

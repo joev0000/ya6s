@@ -69,6 +69,7 @@ public class W65C02 {
     R_AD_AAH,
     R_AD_X_AAL,
     R_AD_X_AAH,
+    R_AD_AAH_SET_PC,
     RW_AA_OPERAND,
     RW_AA_Y_OPERAND,
     RW_AD_X_OPERAND,
@@ -200,6 +201,13 @@ public class W65C02 {
     R_AD_DISCARD,
     R_PC_OPERAND_BRANCH_BIT,
     R_PC_DISCARD_SET_PC,
+    END
+  };
+  private static final Step[] S_ABSOLUTE_INDIRECT = new Step[] {
+    R_PC_ADL,
+    R_PC_ADH,
+    R_AD_AAL,
+    R_AD_AAH_SET_PC,
     END
   };
 
@@ -373,6 +381,7 @@ public class W65C02 {
         case ABSOLUTE_Y: steps[opcode] = S_ABSOLUTE_Y; break;
         case RELATIVE: steps[opcode] = S_RELATIVE; break;
         case RELATIVE_ZP: steps[opcode] = S_RELATIVE_BIT; break;
+        case INDIRECT: steps[opcode] = S_ABSOLUTE_INDIRECT; break;
       }
     }
     steps[0xDB] = S_STOP;
@@ -604,6 +613,7 @@ public class W65C02 {
       case W_S_PCL: write((short)(0x100 + s), (byte)(pc & 0xFF)); s--; break;
       case R_AD_AAL: aal = read(adl++, adh); if(adl == 0) { adh++; } break;
       case R_AD_AAH: aah = read(adl,   adh); break;
+      case R_AD_AAH_SET_PC: aah = read(adl, adh); pc = (short)((aah << 8) | (aal & 0xFF)); break;
       case RW_AA_Y_OPERAND:
         if((((y ^ aal) & ~(aal + y)) | (y & aal) & 0x80) != 0)
           aah++;  // TODO: page boundary?
