@@ -60,6 +60,7 @@ public class W65C02 {
     R_PC_ADZ,
     R_PC_PCH,
     R_PC_DISCARD,
+    R_PC_DISCARD_INC,
     R_PC_DISCARD_SET_PC,
     R_FFFE_PCL,
     R_FFFF_PCH,
@@ -231,6 +232,14 @@ public class W65C02 {
     R_S_P,
     R_S_PCL,
     R_S_PCH,
+    END
+  };
+  private static final Step[] S_STACK_RTS = new Step[] {
+    R_PC_DISCARD,
+    R_S_DISCARD,
+    R_S_PCL,
+    R_S_PCH,
+    R_PC_DISCARD_INC,
     END
   };
 
@@ -409,6 +418,7 @@ public class W65C02 {
     }
     steps[0x00] = S_STACK_BRK;
     steps[0x40] = S_STACK_RTI;
+    steps[0x60] = S_STACK_RTS;
     steps[0xDB] = S_STOP;
   }
   private short pc;
@@ -600,6 +610,7 @@ public class W65C02 {
     switch(steps[opcode & 0xFF][step]) {
       case R_PC_OPERAND: operand = read(pc++); break;
       case R_PC_DISCARD: read(pc); break;
+      case R_PC_DISCARD_INC: read(pc++); break;
       case R_PC_ADL:     adl = read(pc++); break;
       case R_PC_ADH:     adh = read(pc++); break;
       case R_PC_ADZ:     adl = read(pc++); adh = 0; break;
