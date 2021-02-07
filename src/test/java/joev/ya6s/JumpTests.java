@@ -29,7 +29,10 @@ public class JumpTests {
         Assertions.assertA(0x23)),
 
       params("JMP indirect", "6C 00 20", 7,
-        Assertions.assertA(0x23))
+        Assertions.assertA(0x23)),
+
+      params("JMP indirect indexed", "A2 10 7C F0 1F", 10,
+        Assertions.assertA(0x023))
     );
   }
 }
