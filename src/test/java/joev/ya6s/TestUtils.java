@@ -79,6 +79,10 @@ public class TestUtils {
     W65C02 cpu = new W65C02(backplane);
     SRAM ram = new SRAM(backplane);
 
+    executeTest(params, backplane, cpu);
+  }
+
+  public static void executeTest(Parameters params, Backplane backplane, W65C02 cpu) {
     TestUtils.load(backplane, cpu, 0x200, params.program() + "\nDB");
     TestUtils.load(backplane, cpu, 0xFFFC, "00 02");
 
