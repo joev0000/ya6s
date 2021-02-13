@@ -1,75 +1,73 @@
 package joev.ya6s;
 
-import java.util.function.Consumer;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import joev.ya6s.signals.Bus;
+import joev.ya6s.signals.Signal;
 
 /**
- * Miscellaneous test utilities.
+ * Utilits for running the unit tests.
  */
 public class TestUtils {
-
   /**
-   * Load data into memory at a given address.
+   * Run the system, throwing an exception if the program runs too long.
    *
-   * The data is formatted as a String with hex values separated by
-   * whitespace.  For example
-   *
-   *     LDA $#23
-   *
-   * can be encoded as "A9 23"
-   *
-   * @param cpu the CPU whose memory is being loaded into.
-   * @param address the address of where the data is to be loaded.
-   * @param data the data to load.
+   * @param backplane the backplane of the system.
+   * @param cpu the cpu of the system.
+   * @param maxCycles the maxiumum number of cycles to run.
+   * @throws CyclesExceededException if the program does not stop before maxCycles
    */
-  public static void load(W65C02 cpu, int address, String data) {
-    String[] hex = data.split("[ \t\n\r]");
-    for(int i = 0; i < hex.length; i++) {
-      cpu.write((short)address++, Integer.decode(("0x" + hex[i])).byteValue());
-    }
-  }
-
-  /**
-   * Run a program by setting the startAddress to the RESET vector, then
-   * execute a reset.
-   *
-   * @param cpu the CPU to run the program on.
-   * @param startAddress the starting address of the program.
-   * @param maxCycles the maximum number of cycles to execute, exceeding this
-   *   causes a CyclesExceededException to be thrown.
-   */
-  public static int run(W65C02 cpu, int startAddress, int maxCycles) {
+  public static int run(Backplane backplane, W65C02 cpu, int maxCycles) {
     int cycles = 0;
-    cpu.write((short)0xFFFC, (byte)(startAddress & 0xFF));
-    cpu.write((short)0xFFFD, (byte)(startAddress >> 8));
-    cpu.reset();
-
+    Signal clock = backplane.clock();
+    cpu.resb().value(true);
     while(!cpu.stopped()) {
-      if(cycles > maxCycles) {
-        throw new CyclesExceededException(cycles);
-      }
+      if(cycles == maxCycles)
+        throw new CyclesExceededException(maxCycles);
+      clock.value(true);
+      clock.value(false);
       cycles++;
-      cpu.tick();
     }
-    return cycles-1;
+    return cycles;
   }
 
   /**
-   * Execute a test on the cpu with the given test parameters.
+   * Load data into the system.
    *
+   * The hex parameter is one or more lines of hex values separated by whitespace.
+   * Anything after a semicolon on the line is ignored.  For example:
    *
-   * @param params the parameters of the test to run.
-   * @param cpu the CPU to run the test on.
+   *   A9 23 ; LDA #$23
+   *   A2 42 ; LDX #$42
+   *
+   * The CPU has its rdy line set to fales while the bytes are clocked into memory.
+   *
+   * @param backplane the backplane of the system.
+   * @param cpu the cpu of the system.
+   * @param location the location within memory where the bytes will be written.
+   * @param hex the hex bytes to write into the system.
    */
-  public static void executeTest(Parameters params, W65C02 cpu) {
-    String program = params.program() + " DB";
-    int cycles = params.cycles() + 3;
-    Consumer<W65C02>[] asserts = params.asserts();
+  public static void load(Backplane backplane, W65C02 cpu, int location, String hex) {
+    Bus address = backplane.address();
+    Bus data = backplane.data();
+    Signal rwb = backplane.rwb();
+    Signal clock = backplane.clock();
+    Signal rdy = cpu.rdy();
 
-    load(cpu, 0x200, program);
-    assertEquals(cycles, run(cpu, 0x200, cycles));
-    for(int i = 0; i < asserts.length; i++) {
-      asserts[i].accept(cpu);
+    rdy.value(false);
+    String[] lines = hex.split("\n");
+    for(String line: lines) {
+      String trimmed = line.split(";")[0];
+      if(!trimmed.isBlank()) {
+        String[] bytes = trimmed.split("[ \t]+");
+        for(String h: bytes) {
+          clock.value(false);
+          address.value(location++);
+          data.value(Integer.parseInt(h, 16));
+          rwb.value(false);
+          clock.value(true);
+        }
+      }
     }
+    rdy.value(true);
   }
 }
+

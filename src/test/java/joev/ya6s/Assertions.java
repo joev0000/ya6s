@@ -174,15 +174,16 @@ public class Assertions {
     return cpu -> assertEquals((byte)(value & 0xFF), cpu.y());
   }
 
-  /**
-   * Return a Consumer that can assert that a memory location attached
-   * to the CPU is equal to the given value.
-   *
-   * @param address the memory address to check.
-   * @param value the value to assert.
-   * @return a Consumer that can evaluate the assertion.
-   */
-  public static Consumer<W65C02> assertMemory(int address, int value) {
-    return cpu -> assertEquals((byte)value, cpu.read((short)(address & 0xFFFF)));
+  public static Consumer<W65C02> assertMemory(Backplane backplane, int address, int value) {
+    return cpu -> {
+      cpu.rdy().value(false);
+      backplane.address().value(address);
+      backplane.rwb().value(true);
+      backplane.clock().value(false);
+      backplane.clock().value(true);
+      cpu.rdy().value(true);
+
+      assertEquals(value, backplane.data().value());
+    };
   }
 }

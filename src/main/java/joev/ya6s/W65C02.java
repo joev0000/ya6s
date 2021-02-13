@@ -1,7 +1,10 @@
 package joev.ya6s;
 
-import static joev.ya6s.W65C02.Step.*;
+import static joev.ya6s.W65C02.HalfStep.*;
 import static joev.ya6s.W65C02.Instruction.*;
+
+import joev.ya6s.signals.Bus;
+import joev.ya6s.signals.Signal;
 
 /**
  * Simulate a cycle-accurate WDC W65C02S microprocessor.
@@ -46,232 +49,6 @@ public class W65C02 {
   private static final byte ILLEGAL =       (byte)0b10000000;
 
   private static final byte[] addressingModes = new byte[256];
-
-
-  /**
-   * The "micro-instructions" that are executed during a processor cycle.
-   */
-  enum Step {
-    END,
-    R_PC_OPERAND,
-    R_PC_OPERAND_BRANCH,
-    R_PC_ADL,
-    R_PC_ADH,
-    R_PC_ADZ,
-    R_PC_PCH,
-    R_PC_DISCARD,
-    R_PC_DISCARD_INC,
-    R_PC_DISCARD_SET_PC,
-    R_FFFE_PCL,
-    R_FFFF_PCH,
-    RW_AD_OPERAND,
-    R_AD_OPERAND,
-    R_AD_DISCARD,
-    R_AD_DISCARD_MODIFY,
-    R_AD_AAL,
-    R_AD_AAH,
-    R_ADZ_X_AAL,
-    R_ADZ_X_AAH,
-    R_AD_X_AAL,
-    R_AD_AAH_SET_PC,
-    RW_AA_OPERAND,
-    RW_AA_Y_OPERAND,
-    RW_AD_X_OPERAND,
-    RW_AD_Y_OPERAND,
-    R_S_DISCARD,
-    R_S_PCH,
-    R_S_PCL,
-    R_S_P,
-    R_S_REG,
-    W_S_PCH,
-    W_S_PCL,
-    W_S_P,
-    W_S_REG,
-    W_AD_OPERAND,
-    R_PC_OPERAND_BRANCH_BIT
-  }
-
-  private static final Step[][] steps = new Step[256][];
-  private static final Step[] S_IMMEDIATE = new Step[] {
-    R_PC_OPERAND,
-    END
-  };
-  private static final Step[] S_ABSOLUTE = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    RW_AD_OPERAND,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_RMW = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    R_AD_OPERAND,
-    R_AD_DISCARD_MODIFY,
-    W_AD_OPERAND,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_JMP = new Step[] {
-    R_PC_ADL,
-    R_PC_PCH,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_JSR = new Step[] {
-    R_PC_ADL,
-    R_S_DISCARD,
-    W_S_PCH,
-    W_S_PCL,
-    R_PC_PCH,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE = new Step[] {
-    R_PC_ADZ,
-    RW_AD_OPERAND,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_RMW = new Step[] {
-    R_PC_ADZ,
-    R_AD_OPERAND,
-    R_AD_DISCARD_MODIFY,
-    W_AD_OPERAND,
-    END
-  };
-  private static final Step[] S_IMPLIED = new Step[] {
-    R_PC_DISCARD,
-    END
-  };
-  private static final Step[] S_STOP = new Step[] {
-    R_PC_DISCARD,
-    R_PC_DISCARD,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_INDEXED = new Step[] {
-    R_PC_ADZ,
-    R_AD_AAL,
-    R_AD_AAH,
-    RW_AA_Y_OPERAND,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_INDEXED_INDIRECT = new Step[] {
-    R_PC_ADZ,
-    R_PC_DISCARD,
-    R_ADZ_X_AAL,
-    R_ADZ_X_AAH,
-    RW_AA_OPERAND,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_X = new Step[] {
-    R_PC_ADZ,
-    R_PC_DISCARD,
-    RW_AD_X_OPERAND,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_X_RMW = new Step[] {
-    R_PC_ADZ,
-    R_PC_DISCARD,
-    RW_AD_X_OPERAND,
-    R_AD_DISCARD_MODIFY,
-    W_AD_OPERAND,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_Y = new Step[] {
-    R_PC_ADZ,
-    R_PC_DISCARD,
-    RW_AD_Y_OPERAND,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_X = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    RW_AD_X_OPERAND,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_X_RMW = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    RW_AD_X_OPERAND,
-    R_AD_DISCARD,
-    R_AD_DISCARD_MODIFY,
-    W_AD_OPERAND,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_Y = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    RW_AD_Y_OPERAND,
-    END
-  };
-  private static final Step[] S_RELATIVE = new Step[] {
-    R_PC_OPERAND_BRANCH,
-    R_PC_DISCARD_SET_PC,
-    END
-  };
-  private static final Step[] S_RELATIVE_BIT = new Step[] {
-    R_PC_ADZ,
-    R_AD_OPERAND,
-    R_AD_DISCARD,
-    R_PC_OPERAND_BRANCH_BIT,
-    R_PC_DISCARD_SET_PC,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_INDIRECT = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    R_AD_AAL,
-    R_AD_AAH_SET_PC,
-    END
-  };
-  private static final Step[] S_STACK_BRK = new Step[] {
-    R_PC_OPERAND,
-    W_S_PCH,
-    W_S_PCL,
-    W_S_P,
-    R_FFFE_PCL,
-    R_FFFF_PCH,
-    END
-  };
-  private static final Step[] S_STACK_RTI = new Step[] {
-    R_PC_DISCARD,
-    R_S_DISCARD,
-    R_S_P,
-    R_S_PCL,
-    R_S_PCH,
-    END
-  };
-  private static final Step[] S_STACK_RTS = new Step[] {
-    R_PC_DISCARD,
-    R_S_DISCARD,
-    R_S_PCL,
-    R_S_PCH,
-    R_PC_DISCARD_INC,
-    END
-  };
-  private static final Step[] S_STACK_PUSH = new Step[] {
-    R_PC_DISCARD,
-    W_S_REG,
-    END
-  };
-  private static final Step[] S_STACK_PULL = new Step[] {
-    R_PC_DISCARD,
-    R_S_DISCARD,
-    R_S_REG,
-    END
-  };
-  private static final Step[] S_ABSOLUTE_INDEXED_INDIRECT = new Step[] {
-    R_PC_ADL,
-    R_PC_ADH,
-    R_PC_DISCARD,
-    R_AD_X_AAL,
-    R_AD_AAH_SET_PC,
-    END
-  };
-  private static final Step[] S_ZERO_PAGE_INDIRECT = new Step[] {
-    R_PC_ADZ,
-    R_AD_AAL,
-    R_AD_AAH,
-    RW_AA_OPERAND,
-    END
-  };
-
   /**
    * The list of instructions.
    */
@@ -317,6 +94,67 @@ public class W65C02 {
     BEQ, SBC, SBC, XXX, XXX, SBC, INC, SMB, SED, SBC, PLX, XXX, XXX, SBC, SBC, BBS
   };
 
+  enum HalfStep {
+    D_OPCODE,
+    R_PC,
+    R_PC_INC,
+    R_PC_SYNC,
+    R_PC_INC_SYNC,
+    R_PC_AD_SYNC,
+    R_AD,
+    R_FFFC, R_FFFD,
+    D_OPERAND,
+    D_ADL, D_ADH,
+    D_PCL, D_PCH,
+    D_P,
+    R_S_DEC,
+    RW_AD_REG,
+    MODIFY,
+    NOOP
+  };
+  private static final HalfStep[][] halfsteps = new HalfStep[256][];
+
+  private static final HalfStep[] HS_IMMEDIATE = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ABSOLUTE = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADL,     R_PC_INC,
+    D_ADH,     RW_AD_REG,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ABSOLUTE_RMW = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADL,     R_PC_INC,
+    D_ADH,     R_AD,
+    D_OPERAND, R_AD,
+    MODIFY,    RW_AD_REG,
+    NOOP,      R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ABSOLUTE_JUMP = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
+    D_ADL,    R_PC_INC,
+    D_ADH,    R_PC_AD_SYNC
+  };
+  private static final HalfStep[] HS_IMPLIED = new HalfStep[] {
+    D_OPCODE, R_PC,
+    NOOP,     R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_STOP = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
+    NOOP,     R_PC,
+    NOOP,     R_PC_SYNC
+  };
+  private static final HalfStep[] HS_RESET = new HalfStep[] {
+    NOOP,  R_PC,
+    NOOP,  R_S_DEC,
+    D_PCH, R_S_DEC,
+    D_PCL, R_S_DEC,
+    D_P,   R_FFFC,
+    D_PCL, R_FFFD,
+    D_PCH, R_PC_SYNC
+  };
   /**
    * Build the mapping of opcodes to addressing modes, and opcodes to
    * micro-instruction steps.
@@ -396,68 +234,26 @@ public class W65C02 {
       addressingModes[opcode] = addressingMode;
 
       switch(addressingMode) {
-        case IMMEDIATE: steps[opcode] = S_IMMEDIATE; break;
+        case IMMEDIATE: halfsteps[opcode] = HS_IMMEDIATE; break;
+        case IMPLIED:
+          switch(instructions[opcode]) {
+            case STP: halfsteps[opcode] = HS_STOP; break;
+            default:  halfsteps[opcode] = HS_IMPLIED;
+          }
+          break;
         case ABSOLUTE:
           switch(instructions[opcode]) {
-            case BIT, STY, STZ, LDY, CPY, CPX, STX, LDX, ORA, AND, EOR, ADC, STA, LDA, CMP, SBC:
-              steps[opcode] = S_ABSOLUTE; break;
-            case ASL, ROL, LSR, ROR, INC, DEC, TSB, TRB:
-              steps[opcode] = S_ABSOLUTE_RMW; break;
-            case JMP:
-              steps[opcode] = S_ABSOLUTE_JMP; break;
-            case JSR:
-              steps[opcode] = S_ABSOLUTE_JSR; break;
-            default:
-          }
-          break;
-        case ZERO_PAGE:
-          switch(instructions[opcode]) {
-            case BIT, STY, STZ, LDY, CPY, CPX, STX, LDX, ORA, AND, EOR, ADC, STA, LDA, CMP, SBC:
-              steps[opcode] = S_ZERO_PAGE; break;
-            case ASL, ROL, LSR, ROR, INC, DEC, TSB, TRB, RMB, SMB:
-              steps[opcode] = S_ZERO_PAGE_RMW; break;
-            default:
-          }
-          break;
-        case IMPLIED:
-          switch(instructions[opcode & 0xFF]) {
-            case PHA, PHX, PHY, PHP: steps[opcode] = S_STACK_PUSH; break;
-            case PLA, PLX, PLY, PLP: steps[opcode] = S_STACK_PULL; break;
-            default: steps[opcode] = S_IMPLIED;
-          }
-          break;
-        case INDEXED_ZP_Y: steps[opcode] = S_ZERO_PAGE_INDEXED; break;
-        case INDIRECT_ZP_X: steps[opcode] = S_ZERO_PAGE_INDEXED_INDIRECT; break;
-        case ZERO_PAGE_X:
-          switch(instructions[opcode]) {
             case ASL, ROL, LSR, ROR, INC, DEC:
-              steps[opcode] = S_ZERO_PAGE_X_RMW; break;
-            default:
-            steps[opcode] = S_ZERO_PAGE_X; break;
+                      halfsteps[opcode] = HS_ABSOLUTE_RMW; break;
+            case JMP: halfsteps[opcode] = HS_ABSOLUTE_JUMP; break;
+            default:  halfsteps[opcode] = HS_ABSOLUTE;
           }
           break;
-        case ZERO_PAGE_Y: steps[opcode] = S_ZERO_PAGE_Y; break;
-        case ABSOLUTE_X:
-          switch(instructions[opcode]) {
-            case ASL, ROL, LSR, ROR, INC, DEC:
-              steps[opcode] = S_ABSOLUTE_X_RMW; break;
-            default:
-              steps[opcode] = S_ABSOLUTE_X; break;
-          }
-          break;
-        case ABSOLUTE_Y: steps[opcode] = S_ABSOLUTE_Y; break;
-        case RELATIVE: steps[opcode] = S_RELATIVE; break;
-        case RELATIVE_ZP: steps[opcode] = S_RELATIVE_BIT; break;
-        case INDIRECT: steps[opcode] = S_ABSOLUTE_INDIRECT; break;
-        case INDIRECT_X: steps[opcode] = S_ABSOLUTE_INDEXED_INDIRECT; break;
-        case INDIRECT_ZP: steps[opcode] = S_ZERO_PAGE_INDIRECT; break;
       }
     }
-    steps[0x00] = S_STACK_BRK;
-    steps[0x40] = S_STACK_RTI;
-    steps[0x60] = S_STACK_RTS;
-    steps[0xDB] = S_STOP;
   }
+  // ----- END OF STATIC SECTION
+
   private short pc;
   private byte a;
   private byte x;
@@ -465,12 +261,50 @@ public class W65C02 {
   private byte s;
   private byte p = (byte)0b00100000; // The magic bit 5.
 
+  private int halfstep = 0;
+  private byte opcode;
+  private byte adl;
+  private byte adh;
+  private byte aal;
+  private byte aah;
+
   private byte operand;
   private boolean stopped = false;
   private boolean waiting = false;
+  private boolean resetting = false;
 
-  private final byte[] memory = new byte[65536]; // TODO: this is temporary
-  public byte[] memory() { return memory; }      // TODO: this is temporary
+  private final Signal phi2;
+  private final Bus address;
+  private final Bus data;
+  private final Signal rwb;
+  private final Signal sync;
+  private final Signal resb;
+  private final Signal rdy;
+
+  private Signal.Listener tickFn = this::tick;
+
+  public W65C02(Backplane backplane) {
+    phi2 = backplane.clock();
+    address = backplane.address();
+    data = backplane.data();
+    rwb = backplane.rwb();
+    sync = backplane.sync();
+    resb = new Signal("resb");
+    rdy = new Signal("rdy");
+    rdy.value(true);
+    resetting = true;
+    phi2.register(tickFn);
+    rdy.register(et -> {
+      if(et == Signal.EventType.POSITIVE_EDGE) {
+        phi2.register(tickFn);
+      }
+      else {
+        phi2.unregister(tickFn);
+      }
+    });
+  }
+  public Signal resb() { return resb; }
+  public Signal rdy() { return rdy; }
 
   public short pc() { return pc; }
   public byte a() { return a; }
@@ -480,59 +314,6 @@ public class W65C02 {
   public byte p() { return p; }
   public boolean stopped() { return stopped; }
   public boolean waiting() { return waiting; }
-
-  /**
-   * Reset the processor: set the PC to the value at FFFC/D.
-   */
-  public void reset() {
-    byte pc_lo = read((short)0xFFFC);
-    byte pc_hi = read((short)0xFFFD);
-    pc = (short)(pc_hi << 8 | pc_lo);
-  }
-
-  /**
-   * Read the byte at the given address.
-   *
-   * @param address the address to read
-   * @return the value at the address
-   */
-  public byte read(short address) {
-    //System.out.format("Reading $%04X: $%02X\n", address, memory[address & 0xFFFF]);
-    return memory[address & 0xFFFF];
-  }
-
-  /**
-   * Read the byte at the given address.
-   *
-   * @param address_lo the low byte of the address to read
-   * @param address_hi the low byte of the address to read
-   * @return the value at the address
-   */
-  private byte read(byte address_lo, byte address_hi) {
-    return read((short)(address_hi << 8 | (address_lo & 0xFF)));
-  }
-
-  /**
-   * Write the byte to the given address
-   *
-   * @param address the address to write
-   * @param value the value to write
-   */
-  public void write(short address, byte value) {
-    //System.out.format("Writing $%04X: $%02X\n", address, value);
-    memory[address & 0xFFFF] = value;
-  }
-
-  /**
-   * Write the byte to the given address
-   *
-   * @param address_lo the low byte of the address to write
-   * @param address_hi the low byte of the address to write
-   * @param value the value to write.
-   */
-  private void write(byte address_lo, byte address_hi, byte value) {
-    write((short)(address_hi << 8 | (address_lo & 0xFF)), value);
-  }
 
   //no1bdizc
   /**
@@ -554,280 +335,181 @@ public class W65C02 {
       (p & CARRY)             == 0 ? 'c' : 'C');
   }
 
-  public int step = -1;
-  private Instruction instruction = NOP;
-  byte opcode;
-  byte adl;
-  byte adh;
-  byte aal;
-  byte aah;
-
   /**
    * RUn a single cycle of the processor.
    */
-  public void tick() {
-    if(step == -1) {
-      // Initial micro-instruction.  If the previous instruction included
-      // a computation, perform that here.  THis simulates the "pipelining"
-      // in the 6502, which does the computation at the same time it fetches
-      // the next opcode..
-      switch(instruction) {
-        case STP: stopped = true; break;
-        case CLC: p &= ~CARRY; break;
-        case SEC: p |=  CARRY; break;
-        case CLD: p &= ~DECIMAL; break;
-        case SED: p |=  DECIMAL; break;
-        case CLI: p &= ~INTERRUPT_DISABLE; break;
-        case SEI: p |=  INTERRUPT_DISABLE; break;
-        case CLV: p &= ~OVERFLOW; break;
-        case DEX: x--; setNZ(x); break;
-        case INX: x++; setNZ(x); break;
-        case DEY: y--; setNZ(y); break;
-        case INY: y++; setNZ(y); break;
-        case TAX: x = a; setNZ(a); break;
-        case TXA: a = x; setNZ(a); break;
-        case TAY: y = a; setNZ(a); break;
-        case TYA: a = y; setNZ(a); break;
-        case TSX: x = s; setNZ(x); break;
-        case TXS: s = x; setNZ(x); break;
-        case ASL: setCIf((a & 0x80) != 0); a <<= 1; setNZ(a); break;
-        case ROL: int b0 = carry() ? 1 : 0; setCIf((a & 0x80) != 0); a <<= 1; a |= b0; setNZ(a); break;
-        case ROR: int b7 = carry() ? 0x80 : 0; setCIf((a & 0x01) != 0); a >>= 1; a |= b7; setNZ(a); break;
-        case LSR: setCIf((a & 0x01) != 0); a >>= 1; setNZ(a); break;
-        case INC: a++; setNZ(a); break;
-        case DEC: a--; setNZ(a); break;
-        case ADC:
-          if((p & DECIMAL) == 0) {
-            a += operand + (carry() ? 1 : 0);
-            setCV((byte)(a - operand - (carry() ? 1 : 0)), operand, a);
-          }
-          else {
-            // add low digits, check for carry
-            // add high digits plus carry...
-            byte lo = (byte)((a & 0x0F) + (operand & 0x0F) + (carry() ? 1 : 0));
-            if(lo >= 0x0A) { lo += 0x06; lo &= 0x1F; }
-            a = (byte)((a & 0xF0) + (operand & 0xF0) + lo);
-            if(((a >> 4) & 0x0F) >= 0x0A) { a += 0x60; p |= CARRY; } else { p &= ~CARRY; }
-            // What about OVERFLOW?
-          }
-          setNZ(a);
-
-          break;
-        case SBC:
-          if((p & DECIMAL) == 0) {
-            a += ~operand + (carry() ? 1 : 0);
-            setCV((byte)(a - (~operand) - (carry() ? 1 : 0)), operand, a);
-          }
-          else {
-          }
-          setNZ(a);
-          break;
-        case AND: a &= operand; setNZ(a); break;
-        case ORA: a |= operand; setNZ(a); break;
-        case EOR: a ^= operand; setNZ(a); break;
-        case LDA: a = operand; setNZ(a); break;
-        case LDX: x = operand; setNZ(x); break;
-        case LDY: y = operand; setNZ(y); break;
-        case CMP: setNZ((byte)(a - operand)); setCIf(a >= operand); break;
-        case CPX: setNZ((byte)(x - operand)); setCIf(x >= operand); break;
-        case CPY: setNZ((byte)(y - operand)); setCIf(y >= operand); break;
-        case BIT:
-          p = (byte)((a & operand) == 0 ? p | ZERO : p & ~ZERO);
-          p = (byte)((operand & 0x40) != 0 ? p | OVERFLOW : p & ~OVERFLOW);
-          p = (byte)((operand & 0x80) != 0 ? p | NEGATIVE : p & ~NEGATIVE);
-          break;
-        default:
-      }
-      opcode = read(pc++);
-      step = 0;
+  @SuppressWarnings("fallthrough")
+  public void tick(Signal.EventType eventType) {
+    if(stopped || eventType != Signal.EventType.NEGATIVE_EDGE)
       return;
-    }
-
-    // find and run the next micro-instruction
-    switch(steps[opcode & 0xFF][step]) {
-      case R_PC_OPERAND: operand = read(pc++); break;
-      case R_PC_DISCARD: read(pc); break;
-      case R_PC_DISCARD_INC: read(pc++); break;
-      case R_PC_ADL:     adl = read(pc++); break;
-      case R_PC_ADH:     adh = read(pc++); break;
-      case R_PC_ADZ:     adl = read(pc++); adh = 0; break;
-      case RW_AD_OPERAND:
-        switch(instructions[opcode & 0xFF]) {
-          case STA, STX, STY:
-            write(adl, adh, operand); break;
-          case STZ:
-            write(adl, adh, (byte)0); break;
-        default:
-          operand = read(adl, adh);
-        }
-        break;
-      case R_AD_OPERAND: operand = read(adl, adh); break;
-      case R_AD_DISCARD: read(adl, adh); break;
-      case R_AD_DISCARD_MODIFY:
-        read(adl, adh);
-        switch(instructions[opcode & 0xFF]) {
-          case ASL: setCIf((operand & 0x80) != 0); operand <<= 1; setNZ(operand); break;
-          case ROL: int b0 = carry() ? 1 : 0; setCIf((operand & 0x80) != 0); operand <<= 1; operand |= b0; setNZ(operand); break;
-          case LSR: setCIf((operand & 0x01) != 0); operand >>= 1; setNZ(operand); break;
-          case ROR: int b7 = carry() ? 0x80 : 0; setCIf((operand & 0x01) != 0); operand >>= 1; operand |= b7; setNZ(operand); break;
-          case INC: operand++; setNZ(operand); break;
-          case DEC: operand--; setNZ(operand); break;
-          case TSB: p = (byte)((a & operand) == 0 ? p | ZERO : p & ~ZERO); operand |= a;  break;
-          case TRB: p = (byte)((a & operand) == 0 ? p | ZERO : p & ~ZERO); operand &= ~a; break;
-          case RMB: operand &= ~(1 << ((opcode & 0x70) >> 4)); break;
-          case SMB: operand |= 1 << ((opcode & 0x70) >> 4); break;
-          default:
-        }
-        break;
-      case W_AD_OPERAND: write(adl, adh, operand); break;
-      case R_PC_PCH: pc = (short)((adl & 0xFF) | (read(pc++) << 8)); break;
-      case R_S_DISCARD: read((short)(0x100 + s)); break;
-      case W_S_PCH: write((short)(0x100 + s), (byte)((pc >> 8) & 0xFF)); s--; break;
-      case W_S_PCL: write((short)(0x100 + s), (byte)(pc & 0xFF)); s--; break;
-      case W_S_P: write((short)(0x100 + s), (byte)(p | BREAK)); s--; break;
-      case W_S_REG:
-        switch(instructions[opcode & 0xFF]) {
-          case PHA: operand = a; break;
-          case PHX: operand = x; break;
-          case PHY: operand = y; break;
-          case PHP: operand = (byte)(p | BREAK); break;
-          default:
-        }
-        write((short)(0x100 + s), operand); s--;
-        break;
-      case R_S_PCH: s++; pc = (short)((read((short)(0x100 + s)) << 8) | (byte)(pc & 0xFF)); break;
-      case R_S_PCL: s++; pc = (short)((pc & 0xFF00) | (read((short)(0x100 + s)) & 0xFF)); break;
-      case R_S_P: s++; p = (byte)((read((short)(0x100 + s)) | 0b00100000) & ~BREAK); break;
-      case R_S_REG:
-        s++;
-        operand = read((short)(0x100 + s));
-        switch(instructions[opcode & 0xFF]) {
-          case PLA: a = operand; setNZ(operand); break;
-          case PLX: x = operand; setNZ(operand); break;
-          case PLY: y = operand; setNZ(operand); break;
-          case PLP: p = (byte)(operand | 0b0010000); break;
-          default:
-        }
-        break;
-      case R_FFFE_PCL: pc = (short)((pc & 0xFF00) | (read((short)0xFFFE) & 0xFF)); break;
-      case R_FFFF_PCH: pc = (short)((read((short)0xFFFF) << 8) | (pc & 0xFF)); break;
-      case R_AD_AAL: aal = read(adl++, adh); if(adl == 0) { adh++; } break;
-      case R_AD_AAH: aah = read(adl,   adh); break;
-      case R_AD_AAH_SET_PC: aah = read(adl, adh); pc = (short)((aah << 8) | (aal & 0xFF)); break;
-      case RW_AA_Y_OPERAND:
-        if((((y ^ aal) & ~(aal + y)) | (y & aal) & 0x80) != 0)
-          aah++;  // TODO: page boundary?
-        aal += y;
-        switch(instructions[opcode & 0xFF]) {
-          case STA, STX, STY: write(aal, aah, operand); break;
-          case STZ:           write(aal, aah, (byte)0); break;
-          default:            operand = read(aal, aah);
-        }
-        break;
-      case R_ADZ_X_AAL: adl += x; aal = read(adl, (byte)0); adl++; break;
-      case R_ADZ_X_AAH: aah = read(adl, (byte)0); break;
-      case R_AD_X_AAL:
-        if(wouldCarry(adl, x)) adh++;
-        adl += x;
-        aal = read(adl++, adh);
-        if(adl == 0) adh++;
-        break;
-      case RW_AA_OPERAND:
-        switch(instructions[opcode & 0xFF]) {
-          case STA, STX, STY: write(aal, aah, operand); break;
-          case STZ:           write(aal, aah, (byte)0); break;
-          default:            operand = read(aal, aah);
-        }
-        break;
-      case RW_AD_X_OPERAND:
-        if(((((adl & x) | ((adl ^ x) & ~(adl + x))) & 0x80) != 0) &&
-            (addressingModes[opcode & 0xFF] & 0x40) == 0) {
-          adh++;
-          // TODO add page boundary cycle
-        }
-        adl += x;
-        switch(instructions[opcode & 0xFF]) {
-          case STA, STX, STY: write(adl, adh, operand); break;
-          case STZ:           write(adl, adh, (byte)0); break;
-          default:            operand = read(adl, adh); break;
-        }
-        break;
-      case RW_AD_Y_OPERAND:
-        if(((((adl & y) | ((adl ^ y) & ~(adl + y))) & 0x80) != 0) &&
-            (addressingModes[opcode & 0xFF] & 0x40) == 0) {
-          adh++;
-          // TODO add page boundary cycle
-        }
-        adl += y;
-        switch(instructions[opcode & 0xFF]) {
-          case STA, STX: write(adl, adh, operand); break;
-          default: operand = read(adl, adh);
-        }
-        break;
-
-      case R_PC_OPERAND_BRANCH:
-        Instruction i = instructions[opcode & 0xFF];
-        operand = read(pc++);
-        if( i == BRA ||
-           (i == BNE && ((p & ZERO)     == 0)) ||
-           (i == BEQ && ((p & ZERO)     != 0)) ||
-           (i == BCC && ((p & CARRY)    == 0)) ||
-           (i == BCS && ((p & CARRY)    != 0)) ||
-           (i == BPL && ((p & NEGATIVE) == 0)) ||
-           (i == BMI && ((p & NEGATIVE) != 0)) ||
-           (i == BVC && ((p & OVERFLOW) == 0)) ||
-           (i == BVS && ((p & OVERFLOW) != 0))) {
-          adl = (byte)((pc + operand) & 0xFF);
-          adh = (byte)((pc + operand) >> 8);
-          if(adh != (byte)((pc >> 8) & 0xFF)) {
-            // TODO: deal with page boundary crossing.
+    for(int half = 0; half < 2; half++) {
+      HalfStep hs;
+      if(resetting) {
+        hs = HS_RESET[halfstep];
+        System.out.format("tick%d: RESETTING: halfstep: %d (%s)%n", half, halfstep, hs);
+      }
+      else {
+        hs = halfsteps[opcode & 0xFF][halfstep];
+        System.out.format("tick%d: opcode: %02X (%s), halfstep: %d (%s)%n", half, (opcode & 0xFF), instructions[opcode & 0xFF], halfstep, hs);
+      }
+      switch(hs) {
+        case D_OPCODE:
+          opcode = (byte)data.value(); sync.value(false); break;
+        case D_OPERAND: operand = (byte)data.value(); break;
+        case D_PCL: pc = (short)((pc & 0xFF00) | (byte)data.value()); break;
+        case D_PCH: pc = (short)((data.value() << 8) | (pc & 0x00FF)); break;
+        case D_ADL: adl = (byte)data.value(); break;
+        case D_ADH: adh = (byte)data.value(); break;
+        case D_P: p = (byte)(data.value() | 0x20); break;
+        case R_PC: address.value(pc); rwb.value(true); break;
+        case R_PC_INC: address.value(++pc); rwb.value(true); break;
+        case R_AD:
+          address.value((adh << 8) | (adl & 0xFF)); rwb.value(true); break;
+        case RW_AD_REG:
+          switch(instructions[opcode & 0xFF]) {
+            case STX: data.value(x); rwb.value(false); break;
+            case STY: data.value(y); rwb.value(false); break;
+            case STA: data.value(a); rwb.value(false); break;
+            case ASL, ROL, LSR, ROR, INC, DEC:
+                      data.value(operand); rwb.value(false); break;
+            default: rwb.value(true);
           }
-        }
-        else {
-          step++;
-        }
-        break;
-      case R_PC_DISCARD_SET_PC:
-        read(pc);
-        pc = (short)((adh << 8) | (adl & 0xFF));
-        break;
-      case R_PC_OPERAND_BRANCH_BIT:
-        int bit = ((opcode & 0b01110000) >> 4) & 0x07;
-        operand >>= bit;
-        operand &= 0x01;
-        if((((opcode & 0x80) == 0) && (operand == 0)) ||
-            ((opcode & 0x80) != 0) && (operand != 0)) {
-          operand = read(pc++);
-          adl = (byte)((pc + operand) & 0xFF);
-          adh = (byte)((pc + operand) >> 8);
-          if(adh != (byte)((pc >> 8) & 0xFF)) {
-            // TODO: deal with page boundary crossing.
+          address.value((adh << 8) | (adl & 0xFF));
+          break;
+        case R_S_DEC: address.value(0x100 | ((s--) & 0xFF)); rwb.value(true); break;
+        case MODIFY:
+          switch(instructions[opcode & 0xFF]) {
+            case ASL: setCIf((operand & 0x80) != 0); operand <<= 1; setNZ(operand); break;
+            case ROL: int b0 = carry() ? 1 : 0; setCIf((operand & 0x80) != 0); operand <<= 1; operand |= b0; setNZ(operand); break;
+            case LSR: setCIf((operand & 0x01) != 0); operand >>= 1; setNZ(operand); break;
+            case ROR: int b7 = carry() ? 0x80 : 0; setCIf((operand & 0x01) != 0); operand >>= 1; operand |= b7; setNZ(operand); break;
+            case INC: operand++; setNZ(operand); break;
+            case DEC: operand--; setNZ(operand); break;
+            default:
           }
-        }
-        else {
-          read(pc++);
-          step++;
-        }
-        break;
-      case END:
-        instruction = instructions[opcode & 0xFF];
-        switch(instruction) {
-          case ROL, ROR, ASL, LSR, INC, DEC, TSB, TRB:
-            if(addressingModes[opcode & 0xFF] != IMPLIED) {
-              instruction = NOP;
-            }
-            break;
-          default:
-        }
-        step = -1;
-        tick();
-        //System.out.format("PC: $%04X, A: $%02X, X: $%02X, Y: $%02X, S: $%02X, P: $%02X (%s)%n", pc-1, a, x, y, s, p, status());
-        step = -1;
-        break;
-      default:
-        System.out.println("Step not yet implemented.  Stopping processor."); stopped=true;
+          break;
+        case R_FFFC: address.value(0xFFFC); rwb.value(true); break;
+        case R_FFFD: address.value(0xFFFD); rwb.value(true); break;
+        case R_PC_AD_SYNC:
+          pc = (short)((adh << 8) | (adl & 0xFF));
+          // intentional fallthrough
+        case R_PC_SYNC:
+          switch(instructions[opcode & 0xFF]) {
+             case STP: stopped = true; break;
+             default:
+          }
+          address.value(pc);
+          rwb.value(true);
+          sync.value(true);
+          resetting = !resb.value();
+          halfstep = -1; // will be incremented to 0 at end of loop.
+          break;
+        case R_PC_INC_SYNC:
+          switch(instructions[opcode & 0xFF]) {
+            case CLC: p &= ~CARRY; break;
+            case SEC: p |=  CARRY; break;
+            case CLD: p &= ~DECIMAL; break;
+            case SED: p |=  DECIMAL; break;
+            case CLI: p &= ~INTERRUPT_DISABLE; break;
+            case SEI: p |=  INTERRUPT_DISABLE; break;
+            case CLV: p &= ~OVERFLOW; break;
+            case DEX: setNZ(--x); break;
+            case INX: setNZ(++x); break;
+            case DEY: setNZ(--y); break;
+            case INY: setNZ(++y); break;
+            case TAX: x = a; setNZ(x); break;
+            case TXA: a = x; setNZ(a); break;
+            case TAY: y = a; setNZ(y); break;
+            case TYA: a = y; setNZ(a); break;
+            case TSX: x = s; setNZ(x); break;
+            case TXS: s = x;           break;
+            case LDA: a  = operand; setNZ(a); break;
+            case LDX: x  = operand; setNZ(x); break;
+            case LDY: y  = operand; setNZ(y); break;
+            case AND: a &= operand; setNZ(a); break;
+            case ORA: a |= operand; setNZ(a); break;
+            case EOR: a ^= operand; setNZ(a); break;
+            case CMP: setNZ((byte)(a - operand)); setCIf(a >= operand); break;
+            case CPX: setNZ((byte)(x - operand)); setCIf(x >= operand); break;
+            case CPY: setNZ((byte)(y - operand)); setCIf(y >= operand); break;
+            case BIT:
+              p = (byte)((a & operand) == 0 ? p | ZERO : p & ~ZERO);
+              p = (byte)((operand & 0x40) != 0 ? p | OVERFLOW : p & ~OVERFLOW);
+              p = (byte)((operand & 0x80) != 0 ? p | NEGATIVE : p & ~NEGATIVE);
+              break;
+            case ADC:
+              if((p & DECIMAL) == 0) {
+                a += operand + (carry() ? 1 : 0);
+                setCV((byte)(a - operand - (carry() ? 1 : 0)), operand, a);
+              }
+              else {
+                // add low digits, check for carry
+                // add high digits plus carry...
+                byte lo = (byte)((a & 0x0F) + (operand & 0x0F) + (carry() ? 1 : 0));
+                if(lo >= 0x0A) { lo += 0x06; lo &= 0x1F; }
+                a = (byte)((a & 0xF0) + (operand & 0xF0) + lo);
+                if(((a >> 4) & 0x0F) >= 0x0A) { a += 0x60; p |= CARRY; } else { p &= ~CARRY; }
+                // What about OVERFLOW?
+              }
+              setNZ(a);
+              break;
+            case SBC:
+              if((p & DECIMAL) == 0) {
+                a += ~operand + (carry() ? 1 : 0);
+                setCV((byte)(a - (~operand) - (carry() ? 1 : 0)), operand, a);
+              }
+              else {
+              }
+              setNZ(a);
+              break;
+            case ASL:
+              if(addressingModes[opcode] == IMPLIED) {
+                setCIf((a & 0x80) != 0);
+                a <<= 1;
+                setNZ(a);
+              }
+              break;
+            case ROL:
+              if(addressingModes[opcode] == IMPLIED) {
+                int b0 = carry() ? 1 : 0;
+                setCIf((a & 0x80) != 0);
+                a <<= 1;
+                a |= b0;
+                setNZ(a);
+              }
+              break;
+            case LSR:
+              if(addressingModes[opcode] == IMPLIED) {
+                setCIf((a & 0x01) != 0);
+                a >>= 1;
+                setNZ(a);
+              }
+              break;
+            case ROR:
+              if(addressingModes[opcode] == IMPLIED) {
+                int b7 = carry() ? 0x80 : 0;
+                setCIf((a & 0x01) != 0);
+                a >>= 1;
+                a |= b7;
+                setNZ(a);
+              }
+              break;
+            case INC: if(addressingModes[opcode] == IMPLIED) { setNZ(++a); } break;
+            case DEC: if(addressingModes[opcode] == IMPLIED) { setNZ(--a); } break;
+
+            case STP: stopped = true; break;
+            default:
+          }
+          address.value(++pc);
+          rwb.value(true);
+          sync.value(true);
+          resetting = !resb.value();
+          halfstep = -1; // will be incremented to 0 at end of loop.
+          break;
+        case NOOP: break;
+      }
+      halfstep++;
     }
-    step++;
   }
 
   /**
