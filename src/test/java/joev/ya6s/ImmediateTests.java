@@ -1,38 +1,17 @@
 package joev.ya6s;
 
 import static joev.ya6s.Parameters.params;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.function.Consumer;
 
 public class ImmediateTests {
-  private Backplane backplane;
-  private W65C02 cpu;
-  private SRAM ram;
-
-  @BeforeEach
-  void beforeEach() {
-    backplane = new Backplane();
-    ram = new SRAM(backplane);
-    cpu = new W65C02(backplane);
-  }
-
   @ParameterizedTest
   @MethodSource("tests")
   void test(Parameters params) {
-    TestUtils.load(backplane, cpu, 0x200, params.program() + "\nDB");
-    TestUtils.load(backplane, cpu, 0xFFFC, "00 02");
-
-    int cycles = params.cycles() + 7 + 3;  // + reset + STP
-    assertEquals(cycles, TestUtils.run(backplane, cpu, cycles));
-    for(Consumer<W65C02> assertion: params.asserts()) {
-      assertion.accept(cpu);
-    }
+    TestUtils.executeTest(params);
   }
 
   static Stream<Parameters> tests() {

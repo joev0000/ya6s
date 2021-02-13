@@ -1,5 +1,9 @@
 package joev.ya6s;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.function.Consumer;
+
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -55,7 +59,7 @@ public class TestUtils {
     rdy.value(false);
     String[] lines = hex.split("\n");
     for(String line: lines) {
-      String trimmed = line.split(";")[0];
+      String trimmed = line.split(";")[0].trim();
       if(!trimmed.isBlank()) {
         String[] bytes = trimmed.split("[ \t]+");
         for(String h: bytes) {
@@ -68,6 +72,21 @@ public class TestUtils {
       }
     }
     rdy.value(true);
+  }
+
+  public static void executeTest(Parameters params) {
+    Backplane backplane = new Backplane();
+    W65C02 cpu = new W65C02(backplane);
+    SRAM ram = new SRAM(backplane);
+
+    TestUtils.load(backplane, cpu, 0x200, params.program() + "\nDB");
+    TestUtils.load(backplane, cpu, 0xFFFC, "00 02");
+
+    int cycles = params.cycles() + 7 + 3;  // + reset + STP
+    assertEquals(cycles, TestUtils.run(backplane, cpu, cycles));
+    for(Consumer<W65C02> assertion: params.asserts()) {
+      assertion.accept(cpu);
+    }
   }
 }
 
