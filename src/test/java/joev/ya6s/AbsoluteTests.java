@@ -22,6 +22,11 @@ public class AbsoluteTests {
       A9 42 ; LDA #$42
       DB    ; STP
     """);
+
+    TestUtils.load(backplane, cpu, 0x4000, """
+      A9 42 ; LDA #$42
+      60    ; RTS
+    """);
   }
 
   @ParameterizedTest
@@ -113,6 +118,13 @@ public class AbsoluteTests {
         4C 00 30 ; JMP $3000
         A9 23    ; LDA #$23
         """, 5,
+        Assertions.assertA(0x42)),
+
+      params("JSR", """
+        20 00 40 ; JSR $4000
+        A2 23    ; LDX #$23
+        """, 16,
+        Assertions.assertX(0x23),
         Assertions.assertA(0x42))
     );
   }

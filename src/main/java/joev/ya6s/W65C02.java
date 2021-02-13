@@ -107,7 +107,9 @@ public class W65C02 {
     D_ADL, D_ADH,
     D_PCL, D_PCH,
     D_P,
-    R_S_DEC,
+    PCH_D, PCL_D,
+    R_S, R_S_DEC, R_S_INC, R_S_PC_INC,
+    W_S, W_S_DEC,
     RW_AD_REG,
     MODIFY,
     NOOP
@@ -137,8 +139,24 @@ public class W65C02 {
     D_ADL,    R_PC_INC,
     D_ADH,    R_PC_AD_SYNC
   };
+  private static final HalfStep[] HS_ABSOLUTE_JSR = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
+    D_ADL,    R_S_PC_INC,
+    PCH_D,    W_S,
+    PCL_D,    W_S_DEC,
+    NOOP,     R_PC,
+    D_ADH,    R_PC_AD_SYNC
+  };
   private static final HalfStep[] HS_IMPLIED = new HalfStep[] {
     D_OPCODE, R_PC,
+    NOOP,     R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_IMPLIED_RTS = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
+    NOOP,     R_S,
+    NOOP,     R_S,
+    D_PCL,    R_S_INC,
+    D_PCH,    R_PC,
     NOOP,     R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
@@ -238,6 +256,7 @@ public class W65C02 {
         case IMPLIED:
           switch(instructions[opcode]) {
             case STP: halfsteps[opcode] = HS_STOP; break;
+            case RTS: halfsteps[opcode] = HS_IMPLIED_RTS; break;
             default:  halfsteps[opcode] = HS_IMPLIED;
           }
           break;
@@ -246,6 +265,7 @@ public class W65C02 {
             case ASL, ROL, LSR, ROR, INC, DEC:
                       halfsteps[opcode] = HS_ABSOLUTE_RMW; break;
             case JMP: halfsteps[opcode] = HS_ABSOLUTE_JUMP; break;
+            case JSR: halfsteps[opcode] = HS_ABSOLUTE_JSR; break;
             default:  halfsteps[opcode] = HS_ABSOLUTE;
           }
           break;
@@ -361,6 +381,8 @@ public class W65C02 {
         case D_ADL: adl = (byte)data.value(); break;
         case D_ADH: adh = (byte)data.value(); break;
         case D_P: p = (byte)(data.value() | 0x20); break;
+        case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
+        case PCL_D: data.value((byte)(pc & 0xFF)); break;
         case R_PC: address.value(pc); rwb.value(true); break;
         case R_PC_INC: address.value(++pc); rwb.value(true); break;
         case R_AD:
@@ -376,7 +398,12 @@ public class W65C02 {
           }
           address.value((adh << 8) | (adl & 0xFF));
           break;
+        case R_S_PC_INC: pc++; // Intentional fallthrough to R_S
+        case R_S: address.value(0x100  | (s & 0xFF)); rwb.value(true); break;
         case R_S_DEC: address.value(0x100 | ((s--) & 0xFF)); rwb.value(true); break;
+        case R_S_INC: address.value(0x100 | ((++s) & 0xFF)); rwb.value(true); break;
+        case W_S: address.value(0x100 | (s & 0xFF)); rwb.value(false); break;
+        case W_S_DEC: address.value(0x100 | ((--s) & 0xFF)); rwb.value(false); break;
         case MODIFY:
           switch(instructions[opcode & 0xFF]) {
             case ASL: setCIf((operand & 0x80) != 0); operand <<= 1; setNZ(operand); break;
