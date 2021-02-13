@@ -104,7 +104,7 @@ public class W65C02 {
     R_AD,
     R_FFFC, R_FFFD,
     D_OPERAND,
-    D_ADL, D_ADH,
+    D_ADL, D_ADH, D_ADZ,
     D_PCL, D_PCH,
     D_P,
     PCH_D, PCL_D,
@@ -146,6 +146,18 @@ public class W65C02 {
     PCL_D,    W_S_DEC,
     NOOP,     R_PC,
     D_ADH,    R_PC_AD_SYNC
+  };
+  private static final HalfStep[] HS_ZERO_PAGE = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     RW_AD_REG,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ZERO_PAGE_RMW = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     R_AD,
+    D_OPERAND, R_AD,
+    MODIFY,    RW_AD_REG,
+    NOOP,      R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_IMPLIED = new HalfStep[] {
     D_OPCODE, R_PC,
@@ -269,6 +281,13 @@ public class W65C02 {
             default:  halfsteps[opcode] = HS_ABSOLUTE;
           }
           break;
+        case ZERO_PAGE:
+          switch(instructions[opcode]) {
+            case ASL, ROL, LSR, ROR, INC, DEC:
+                     halfsteps[opcode] = HS_ZERO_PAGE_RMW; break;
+            default: halfsteps[opcode] = HS_ZERO_PAGE;
+          }
+          break;
       }
     }
   }
@@ -378,6 +397,7 @@ public class W65C02 {
         case D_OPERAND: operand = (byte)data.value(); break;
         case D_PCL: pc = (short)((pc & 0xFF00) | (byte)data.value()); break;
         case D_PCH: pc = (short)((data.value() << 8) | (pc & 0x00FF)); break;
+        case D_ADZ: adh = 0; // intentional fallthrough to D_ADL
         case D_ADL: adl = (byte)data.value(); break;
         case D_ADH: adh = (byte)data.value(); break;
         case D_P: p = (byte)(data.value() | 0x20); break;
