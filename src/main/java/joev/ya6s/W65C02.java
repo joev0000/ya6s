@@ -208,6 +208,29 @@ public class W65C02 {
     NOOP,      RW_AD_Y_REG,
     D_OPERAND, R_PC_INC_SYNC
   };
+  private static final HalfStep[] HS_ABSOLUTE_X = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADL,     R_PC_INC,
+    D_ADH,     R_PC,
+    NOOP,      RW_AD_X_REG,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ABSOLUTE_X_RMW = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADL,     R_PC_INC,
+    D_ADH,     R_PC,
+    NOOP,      R_AD_X,
+    D_OPERAND, R_AD_X,
+    MODIFY,    RW_AD_X_REG,
+    NOOP,      R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ABSOLUTE_Y = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADL,     R_PC_INC,
+    D_ADH,     R_PC,
+    NOOP,      RW_AD_Y_REG,
+    D_OPERAND, R_PC_INC_SYNC
+  };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
     D_OPCODE, R_PC_INC,
     NOOP,     R_PC,
@@ -335,6 +358,14 @@ public class W65C02 {
           }
           break;
         case ZERO_PAGE_Y: halfsteps[opcode] = HS_ZERO_PAGE_Y; break;
+        case ABSOLUTE_X:
+          switch(instructions[opcode]) {
+            case ASL, ROL, LSR, ROR, DEC, INC:
+                     halfsteps[opcode] = HS_ABSOLUTE_X_RMW; break;
+            default: halfsteps[opcode] = HS_ABSOLUTE_X;
+          }
+          break;
+        case ABSOLUTE_Y: halfsteps[opcode] = HS_ABSOLUTE_Y; break;
       }
     }
   }
@@ -458,7 +489,7 @@ public class W65C02 {
         case R_AD:
           address.value((adh << 8) | (adl & 0xFF)); rwb.value(true); break;
         case R_AD_X_INC: adl++; // intentional fallthrough to R_AD_X
-        case R_AD_X: address.value((adh << 0) | ((adl + x) & 0xFF)); rwb.value(true); break;
+        case R_AD_X: address.value((adh << 8) | ((adl + x) & 0xFF)); rwb.value(true); break;
         case RW_AD_REG:
           switch(instructions[opcode & 0xFF]) {
             case STX: data.value(x); rwb.value(false); break;
