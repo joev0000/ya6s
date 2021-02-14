@@ -96,7 +96,22 @@ public class ZeroPageTests {
       Assertions::assertCarry,
       Assertions::assertNegative,
       Assertions::assertNotZero,
-      Assertions.assertA(0xAA))
+      Assertions.assertA(0xAA)),
+
+      params("SMB5", """
+        64 10 ; STZ  $10
+        D7 10 ; SMB5 $10
+        A5 10 ; LDA  $10
+        """, 11,
+        Assertions.assertA(0b00100000)),
+
+      params("RMB6", """
+        A9 FF ; LDA  #$FF
+        85 10 ; STA  $10
+        67 10 ; RMB6 $10
+        A5 10 ; LDA  $10
+        """, 13,
+        Assertions.assertA(0b10111111))
     );
   }
 }

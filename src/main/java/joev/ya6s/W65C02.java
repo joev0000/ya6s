@@ -283,7 +283,7 @@ public class W65C02 {
           break;
         case ZERO_PAGE:
           switch(instructions[opcode]) {
-            case ASL, ROL, LSR, ROR, INC, DEC:
+            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB:
                      halfsteps[opcode] = HS_ZERO_PAGE_RMW; break;
             default: halfsteps[opcode] = HS_ZERO_PAGE;
           }
@@ -412,7 +412,7 @@ public class W65C02 {
             case STX: data.value(x); rwb.value(false); break;
             case STY: data.value(y); rwb.value(false); break;
             case STA: data.value(a); rwb.value(false); break;
-            case ASL, ROL, LSR, ROR, INC, DEC:
+            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB:
                       data.value(operand); rwb.value(false); break;
             default: rwb.value(true);
           }
@@ -432,6 +432,8 @@ public class W65C02 {
             case ROR: int b7 = carry() ? 0x80 : 0; setCIf((operand & 0x01) != 0); operand >>= 1; operand |= b7; setNZ(operand); break;
             case INC: operand++; setNZ(operand); break;
             case DEC: operand--; setNZ(operand); break;
+            case RMB: operand &= ~(1 << ((opcode & 0b01110000) >> 4)); break;
+            case SMB: operand |=  (1 << ((opcode & 0b01110000) >> 4)); break;
             default:
           }
           break;
