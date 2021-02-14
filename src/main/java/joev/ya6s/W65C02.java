@@ -101,7 +101,7 @@ public class W65C02 {
     R_PC_SYNC,
     R_PC_INC_SYNC,
     R_PC_AD_SYNC,
-    R_AD, R_AD_INC,
+    R_AD, R_AD_INC, R_AD_X, R_AD_X_INC,
     R_FFFC, R_FFFD,
     D_OPERAND,
     D_ADL, D_ADH, D_ADZ,
@@ -112,7 +112,7 @@ public class W65C02 {
     R_S, R_S_DEC, R_S_INC, R_S_PC_INC,
     W_S, W_S_DEC,
     RW_AD_REG,
-    RW_AA_Y,
+    RW_AA, RW_AA_Y,
     MODIFY,
     NOOP
   };
@@ -178,6 +178,14 @@ public class W65C02 {
     D_ADZ,     R_AD,
     D_AAL,     R_AD_INC,
     D_AAH,     RW_AA_Y,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ZERO_PAGE_INDIRECT = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     R_PC,
+    NOOP,      R_AD_X,
+    D_AAL,     R_AD_X_INC,
+    D_AAH,     RW_AA,
     D_OPERAND, R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
@@ -297,11 +305,8 @@ public class W65C02 {
             default: halfsteps[opcode] = HS_ZERO_PAGE;
           }
           break;
-        case INDEXED_ZP_Y:
-          switch(instructions[opcode]) {
-            default: halfsteps[opcode] = HS_ZERO_PAGE_INDEXED;
-          }
-          break;
+        case INDEXED_ZP_Y: halfsteps[opcode] = HS_ZERO_PAGE_INDEXED; break;
+        case INDIRECT_ZP_X: halfsteps[opcode] = HS_ZERO_PAGE_INDIRECT; break;
       }
     }
   }
@@ -424,6 +429,8 @@ public class W65C02 {
         case R_AD_INC: adl++; if(adl == 0) adh++; // intentional fallthrough to R_AD
         case R_AD:
           address.value((adh << 8) | (adl & 0xFF)); rwb.value(true); break;
+        case R_AD_X_INC: adl++; // intentional fallthrough to R_AD_X
+        case R_AD_X: address.value((adh << 0) | ((adl + x) & 0xFF)); rwb.value(true); break;
         case RW_AD_REG:
           switch(instructions[opcode & 0xFF]) {
             case STX: data.value(x); rwb.value(false); break;
@@ -443,6 +450,13 @@ public class W65C02 {
           }
           if(wouldCarry(aal, y)) aah++;   // TODO: page boundary?
           address.value((aah << 8) | ((aal + y) & 0xFF));
+          break;
+        case RW_AA:
+          switch(instructions[opcode & 0xFF]) {
+            case STA: data.value(a); rwb.value(false); break;
+            default: rwb.value(true);
+          }
+          address.value((aah << 8) | (aal & 0xFF));
           break;
         case R_S_PC_INC: pc++; // Intentional fallthrough to R_S
         case R_S: address.value(0x100  | (s & 0xFF)); rwb.value(true); break;
