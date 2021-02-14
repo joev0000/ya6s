@@ -111,7 +111,7 @@ public class W65C02 {
     PCH_D, PCL_D,
     R_S, R_S_DEC, R_S_INC, R_S_PC_INC,
     W_S, W_S_DEC,
-    RW_AD_REG,
+    RW_AD_REG, RW_AD_X_REG, RW_AD_Y_REG,
     RW_AA, RW_AA_Y,
     MODIFY,
     NOOP
@@ -186,6 +186,26 @@ public class W65C02 {
     NOOP,      R_AD_X,
     D_AAL,     R_AD_X_INC,
     D_AAH,     RW_AA,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ZERO_PAGE_X = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     R_PC,
+    NOOP,      RW_AD_X_REG,
+    D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ZERO_PAGE_X_RMW = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     R_PC,
+    NOOP,      R_AD_X,
+    D_OPERAND, R_AD_X,
+    MODIFY,    RW_AD_X_REG,
+    NOOP,      R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_ZERO_PAGE_Y = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     R_PC,
+    NOOP,      RW_AD_Y_REG,
     D_OPERAND, R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
@@ -307,6 +327,14 @@ public class W65C02 {
           break;
         case INDEXED_ZP_Y: halfsteps[opcode] = HS_ZERO_PAGE_INDEXED; break;
         case INDIRECT_ZP_X: halfsteps[opcode] = HS_ZERO_PAGE_INDIRECT; break;
+        case ZERO_PAGE_X:
+          switch(instructions[opcode]) {
+            case ASL, ROL, LSR, ROR, DEC, INC:
+                     halfsteps[opcode] = HS_ZERO_PAGE_X_RMW; break;
+            default: halfsteps[opcode] = HS_ZERO_PAGE_X;
+          }
+          break;
+        case ZERO_PAGE_Y: halfsteps[opcode] = HS_ZERO_PAGE_Y; break;
       }
     }
   }
@@ -436,11 +464,30 @@ public class W65C02 {
             case STX: data.value(x); rwb.value(false); break;
             case STY: data.value(y); rwb.value(false); break;
             case STA: data.value(a); rwb.value(false); break;
+            case STZ: data.value(0); rwb.value(false); break;
             case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB:
                       data.value(operand); rwb.value(false); break;
             default: rwb.value(true);
           }
           address.value((adh << 8) | (adl & 0xFF));
+          break;
+        case RW_AD_X_REG:
+          switch(instructions[opcode & 0xFF]) {
+            case STY: data.value(y); rwb.value(false); break;
+            case STA: data.value(a); rwb.value(false); break;
+            case STZ: data.value(0); rwb.value(false); break;
+            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB:
+                      data.value(operand); rwb.value(false); break;
+            default: rwb.value(true);
+          }
+          address.value((adh << 8) | ((adl + x) & 0xFF));
+          break;
+        case RW_AD_Y_REG:
+          switch(instructions[opcode & 0xFF]) {
+            case STX: data.value(x); rwb.value(false); break;
+            default: rwb.value(true);
+          }
+          address.value((adh << 8) | ((adl + y) & 0xFF));
           break;
         case RW_AA_Y:
           switch(instructions[opcode & 0xFF]) {
