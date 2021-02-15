@@ -96,6 +96,38 @@ public class RelativeTests {
         F0 5C ; BEQ #$5C ($260)
         A9 23 ; LDA #$23
         """, 6,
+        Assertions.assertA(0x23)),
+
+      params("BBR5", """
+        A9 DF    ; LDA #$DF
+        85 33    ; STA $33
+        5F 33 59 ; BBR5 $33,$#59 ($260)
+        A9 23    ; LDA #$23
+        """, 13,
+        Assertions.assertA(0x42)),
+
+      params("BBR5 false", """
+        A9 20    ; LDA #$20
+        85 33    ; STA $33
+        5F 33 59 ; BBR5 $33,$#59 ($260)
+        A9 23    ; LDA #$23
+        """, 12,
+        Assertions.assertA(0x23)),
+
+      params("BBS4", """
+        A9 10    ; LDA #$10
+        85 33    ; STA $33
+        CF 33 59 ; BBS4 $33,$#59 ($260)
+        A9 23    ; LDA #$23
+        """, 13,
+        Assertions.assertA(0x42)),
+
+      params("BBS4 false", """
+        A9 EF    ; LDA #$EF
+        85 33    ; STA $33
+        CF 33 59 ; BBS4 $33,$#59 ($260)
+        A9 23    ; LDA #$23
+        """, 12,
         Assertions.assertA(0x23))
     );
   }

@@ -103,7 +103,7 @@ public class W65C02 {
     R_PC_AD_SYNC,
     R_AD, R_AD_INC, R_AD_X, R_AD_X_INC,
     R_FFFC, R_FFFD,
-    D_OPERAND,
+    D_OPERAND, D_OFFSET,
     D_ADL, D_ADH, D_ADZ,
     D_AAL, D_AAH,
     D_PCL, D_PCH,
@@ -234,7 +234,15 @@ public class W65C02 {
   };
   private static final HalfStep[] HS_RELATIVE = new HalfStep[] {
     D_OPCODE,  R_PC_INC,
-    D_OPERAND, R_PC_INC_SYNC_COND,
+    D_OFFSET,  R_PC_INC_SYNC_COND,
+    OFFSET_PC, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_RELATIVE_BIT = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_ADZ,     R_PC_INC,
+    D_OFFSET,  R_AD,
+    D_OPERAND, R_AD,
+    NOOP,      R_PC_INC_SYNC_COND,
     OFFSET_PC, R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
@@ -373,6 +381,7 @@ public class W65C02 {
           break;
         case ABSOLUTE_Y: halfsteps[opcode] = HS_ABSOLUTE_Y; break;
         case RELATIVE: halfsteps[opcode] = HS_RELATIVE; break;
+        case RELATIVE_ZP: halfsteps[opcode] = HS_RELATIVE_BIT; break;
       }
     }
   }
@@ -393,6 +402,7 @@ public class W65C02 {
   private byte aah;
 
   private byte operand;
+  private byte offset;
   private boolean stopped = false;
   private boolean waiting = false;
   private boolean resetting = false;
@@ -480,6 +490,7 @@ public class W65C02 {
         case D_OPCODE:
           opcode = (byte)data.value(); sync.value(false); break;
         case D_OPERAND: operand = (byte)data.value(); break;
+        case D_OFFSET: offset = (byte)data.value(); break;
         case D_PCL: pc = (short)((pc & 0xFF00) | (byte)data.value()); break;
         case D_PCH: pc = (short)((data.value() << 8) | (pc & 0x00FF)); break;
         case D_ADZ: adh = 0; // intentional fallthrough to D_ADL
@@ -490,7 +501,7 @@ public class W65C02 {
         case D_P: p = (byte)(data.value() | 0x20); break;
         case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
         case PCL_D: data.value((byte)(pc & 0xFF)); break;
-        case OFFSET_PC: pc += operand; break;
+        case OFFSET_PC: pc += offset; break;
         case R_PC: address.value(pc); rwb.value(true); break;
         case R_PC_INC: address.value(++pc); rwb.value(true); break;
         case R_AD_INC: adl++; if(adl == 0) adh++; // intentional fallthrough to R_AD
@@ -691,7 +702,9 @@ public class W65C02 {
               ((ins == BCC) && ((p & CARRY)    == 0)) ||
               ((ins == BCS) && ((p & CARRY)    != 0)) ||
               ((ins == BNE) && ((p & ZERO)     == 0)) ||
-              ((ins == BEQ) && ((p & ZERO)     != 0)))) {
+              ((ins == BEQ) && ((p & ZERO)     != 0)) || 
+              ((ins == BBR) && ((operand & (1 << ((opcode & 0x70) >> 4))) == 0)) ||
+              ((ins == BBS) && ((operand & (1 << ((opcode & 0x70) >> 4))) != 0)))) {
             address.value(++pc);
             rwb.value(true);
             sync.value(true);
