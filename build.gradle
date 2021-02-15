@@ -1,5 +1,6 @@
 plugins {
   id 'application'
+  id 'com.intershop.gradle.javacc' version '4.0.0'
 }
 
 application {
@@ -27,6 +28,20 @@ compileJava {
 
 compileTestJava {
   options.compilerArgs += ['-Xlint:all', '-Werror']
+}
+
+javacc {
+  javaCCVersion = '7.0.9'
+  configs {
+    monitor {
+      inputFile = file('src/main/java/joev/ya6s/monitor/parser.jj')
+      packageName = 'joev.ya6s.monitor'
+    }
+  }
+}
+
+run {
+  standardInput = System.in
 }
 
 test {

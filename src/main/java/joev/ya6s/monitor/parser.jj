@@ -1,0 +1,118 @@
+options {
+  STATIC = false;
+}
+
+PARSER_BEGIN(MonitorParser)
+package joev.ya6s.monitor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MonitorParser {
+}
+
+PARSER_END(MonitorParser)
+
+SKIP: { " " | "\t" }
+
+TOKEN [IGNORE_CASE]: {
+  <EXIT:  "e" | "exit"> |
+  <READ:  "r" | "read"> |
+  <WRITE: "w" | "write"> |
+  <CONT:  "c" | "cont"> |
+  <STEP:  "s" | "step"> |
+  <LOAD:  "l" | "load"> |
+  <RESET: "reset">
+}
+
+TOKEN: {
+  <DECIMAL_DIGIT: ["0"-"9"]> |
+  <HEX_DIGIT: <DECIMAL_DIGIT> | ["A"-"F","a"-"f"]> |
+  <HEX_NUMBER: (<HEX_DIGIT>)+> |
+  <LETTER: ["A"-"Z","a"-"z"]> |
+  <FILENAME_CHAR: <LETTER> | <DECIMAL_DIGIT> | ["!"-"/",":"-"@","["-"`","{"-"~"]> |
+  <FILENAME: (<FILENAME_CHAR>)+>
+}
+
+Command command(): { Command c; }
+{
+  (
+    c = exit() |
+    c = read() |
+    c = write() |
+    c = cont() |
+    c = step() |
+    c = load() |
+    c = reset()
+  ) "\n" {return c;}
+  // |
+  // "\n" { return NoopCommand.instance(); }
+}
+
+
+Command exit(): { }
+{
+  <EXIT> {
+    return ExitCommand.instance();
+  }
+}
+
+Command reset(): { }
+{
+  <RESET> { return ResetCommand.instance(); }
+}
+
+Command read(): {
+  Token start;
+  Token end = null;
+}
+{
+  <READ> start=<HEX_NUMBER> (end=<HEX_NUMBER>)? {
+    ReadCommand cmd;
+    if(end != null) {
+      cmd = new ReadCommand(
+        (short)Integer.parseInt(start.image, 16),
+        (short)Integer.parseInt(end.image, 16));
+    }
+    else {
+      cmd = new ReadCommand((short)Integer.parseInt(start.image, 16));
+    }
+    return cmd;
+  }
+}
+
+Command write(): {
+  Token t;
+  int start;
+  List<Integer> list = new ArrayList<>();
+}
+{
+  <WRITE> t=<HEX_NUMBER> { start = Integer.parseInt(t.image, 16); }
+  ( t=<HEX_NUMBER> { list.add(Integer.parseInt(t.image, 16)); } )*
+  {
+    byte[] data = new byte[list.size()];
+    int i = 0;
+    for(Integer value: list) {
+      data[i++] = value.byteValue();
+    }
+    return new WriteCommand((short)start, data);
+  }
+}
+
+Command cont(): { }
+{
+  <CONT> { return ContinueCommand.instance(); }
+}
+
+Command step(): { }
+{
+  <STEP> { return StepCommand.instance(); }
+}
+
+Command load(): {
+  Token start;
+  Token path;
+}
+{
+  <LOAD> start=<HEX_NUMBER> path=<FILENAME> { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
+}

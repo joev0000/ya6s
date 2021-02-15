@@ -541,11 +541,12 @@ public class W65C02 {
       if(resetting) {
         hs = HS_RESET[halfstep];
         opcode = (byte)0xEA;
-        System.out.format("tick%d: RESETTING: halfstep: %d (%s)%n", half, halfstep, hs);
+        sync.value(false);
+        //System.out.format("tick%d: RESETTING: halfstep: %d (%s)%n", half, halfstep, hs);
       }
       else {
         hs = halfsteps[opcode & 0xFF][halfstep];
-        System.out.format("tick%d: opcode: %02X (%s), halfstep: %d (%s)%n", half, (opcode & 0xFF), instructions[opcode & 0xFF], halfstep, hs);
+        //System.out.format("tick%d: opcode: %02X (%s), halfstep: %d (%s)%n", half, (opcode & 0xFF), instructions[opcode & 0xFF], halfstep, hs);
       }
       switch(hs) {
         case D_OPCODE:
