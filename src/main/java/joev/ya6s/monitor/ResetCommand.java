@@ -13,7 +13,7 @@ public class ResetCommand implements Command {
   /**
    * Private constructor- use the instance() method to get an instance.
    */
-  private ResetCommand { }
+  private ResetCommand() { }
 
   /**
    * Get an instance of the Reset command.
