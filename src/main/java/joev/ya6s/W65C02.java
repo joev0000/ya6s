@@ -261,6 +261,14 @@ public class W65C02 {
     D_PCL,     R_AD_INC,
     D_PCH,     R_PC_SYNC
   };
+  private static final HalfStep[] HS_ABSOLUTE_INDEXED_INDIRECT_JUMP = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
+    D_ADL,    R_PC_INC,
+    D_ADH,    R_PC,
+    NOOP,     R_AD_X,
+    D_PCL,    R_AD_X_INC,
+    D_PCH,    R_PC_SYNC
+  };
   private static final HalfStep[] HS_STACK_PUSH = new HalfStep[] {
     D_OPCODE,  R_PC,
     REG_D,     W_S_DEC,
@@ -425,6 +433,7 @@ public class W65C02 {
         case RELATIVE: halfsteps[opcode] = HS_RELATIVE; break;
         case RELATIVE_ZP: halfsteps[opcode] = HS_RELATIVE_BIT; break;
         case INDIRECT: halfsteps[opcode] = HS_ABSOLUTE_INDIRECT_JUMP; break;
+        case INDIRECT_X: halfsteps[opcode] = HS_ABSOLUTE_INDEXED_INDIRECT_JUMP; break;
       }
     }
   }
