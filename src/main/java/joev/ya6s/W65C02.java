@@ -97,18 +97,18 @@ public class W65C02 {
   enum HalfStep {
     D_OPCODE,
     R_PC,
-    R_PC_INC,
+    R_PC_INC, R_PC_INC_INC,
     R_PC_SYNC,
     R_PC_INC_SYNC, R_PC_INC_SYNC_COND,
     R_PC_AD_SYNC,
     R_AD, R_AD_INC, R_AD_X, R_AD_X_INC,
-    R_FFFC, R_FFFD,
+    R_FFFC, R_FFFD, R_FFFE, R_FFFF,
     D_OPERAND, D_OFFSET,
     D_ADL, D_ADH, D_ADZ,
     D_AAL, D_AAH,
     D_PCL, D_PCH,
     D_P,
-    PCH_D, PCL_D,
+    PCH_D, PCL_D, P_D,
     R_S, R_S_DEC, R_S_INC, R_S_PC_INC,
     W_S, W_S_DEC,
     RW_AD_REG, RW_AD_X_REG, RW_AD_Y_REG,
@@ -173,6 +173,14 @@ public class W65C02 {
     D_PCL,    R_S_INC,
     D_PCH,    R_PC,
     NOOP,     R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_IMPLIED_RTI = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
+    NOOP,     R_S,
+    NOOP,     R_S,
+    D_P,      R_S_INC,
+    D_PCL,    R_S_INC,
+    D_PCH,    R_PC_SYNC
   };
   private static final HalfStep[] HS_ZERO_PAGE_INDEXED = new HalfStep[] {
     D_OPCODE , R_PC_INC,
@@ -257,6 +265,15 @@ public class W65C02 {
     D_OPCODE, R_PC_INC,
     NOOP,     R_PC,
     NOOP,     R_PC_SYNC
+  };
+  private static final HalfStep[] HS_IRQ_BRK = new HalfStep[] {
+    D_OPCODE, R_PC_INC_INC,
+    PCH_D,    W_S_DEC,
+    PCL_D,    W_S_DEC,
+    P_D,      W_S_DEC,
+    NOOP,     R_FFFE,
+    D_PCL,    R_FFFF,
+    D_PCH,    R_PC_SYNC
   };
   private static final HalfStep[] HS_RESET = new HalfStep[] {
     NOOP,  R_PC,
@@ -350,7 +367,9 @@ public class W65C02 {
         case IMPLIED:
           switch(instructions[opcode]) {
             case STP: halfsteps[opcode] = HS_STOP; break;
+            case BRK: halfsteps[opcode] = HS_IRQ_BRK; break;
             case RTS: halfsteps[opcode] = HS_IMPLIED_RTS; break;
+            case RTI: halfsteps[opcode] = HS_IMPLIED_RTI; break;
             default:  halfsteps[opcode] = HS_IMPLIED;
           }
           break;
@@ -489,6 +508,7 @@ public class W65C02 {
       HalfStep hs;
       if(resetting) {
         hs = HS_RESET[halfstep];
+        opcode = (byte)0xEA;
         System.out.format("tick%d: RESETTING: halfstep: %d (%s)%n", half, halfstep, hs);
       }
       else {
@@ -507,11 +527,19 @@ public class W65C02 {
         case D_ADH: adh = (byte)data.value(); break;
         case D_AAL: aal = (byte)data.value(); break;
         case D_AAH: aah = (byte)data.value(); break;
-        case D_P: p = (byte)(data.value() | 0x20); break;
+        case D_P:
+          p = (byte)(data.value() | 0x20);
+          switch(instructions[opcode & 0xFF]) {
+            case BRK, PHP: p |= BREAK;
+            default:
+          }
+          break;
         case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
         case PCL_D: data.value((byte)(pc & 0xFF)); break;
+        case P_D:   data.value(p); break;
         case OFFSET_PC: pc += offset; break;
         case R_PC: address.value(pc); rwb.value(true); break;
+        case R_PC_INC_INC: ++pc; // Intentional fallthrough to R_PC_INC
         case R_PC_INC: address.value(++pc); rwb.value(true); break;
         case R_AD_INC: adl++; if(adl == 0) adh++; // intentional fallthrough to R_AD
         case R_AD:
@@ -585,6 +613,8 @@ public class W65C02 {
           break;
         case R_FFFC: address.value(0xFFFC); rwb.value(true); break;
         case R_FFFD: address.value(0xFFFD); rwb.value(true); break;
+        case R_FFFE: address.value(0xFFFE); rwb.value(true); break;
+        case R_FFFF: address.value(0xFFFF); rwb.value(true); break;
         case R_PC_AD_SYNC:
           pc = (short)((adh << 8) | (adl & 0xFF));
           // intentional fallthrough
