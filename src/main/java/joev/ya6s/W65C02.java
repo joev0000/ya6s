@@ -145,7 +145,7 @@ public class W65C02 {
   private static final HalfStep[] HS_ABSOLUTE_JSR = new HalfStep[] {
     D_OPCODE, R_PC_INC,
     D_ADL,    R_S_PC_INC,
-    PCH_D,    W_S,
+    PCH_D,    W_S_DEC,
     PCL_D,    W_S_DEC,
     NOOP,     R_PC,
     D_ADH,    R_PC_AD_SYNC
@@ -176,7 +176,7 @@ public class W65C02 {
   private static final HalfStep[] HS_IMPLIED_RTS = new HalfStep[] {
     D_OPCODE, R_PC_INC,
     NOOP,     R_S,
-    NOOP,     R_S,
+    NOOP,     R_S_INC,
     D_PCL,    R_S_INC,
     D_PCH,    R_PC,
     NOOP,     R_PC_INC_SYNC
@@ -184,7 +184,7 @@ public class W65C02 {
   private static final HalfStep[] HS_IMPLIED_RTI = new HalfStep[] {
     D_OPCODE, R_PC_INC,
     NOOP,     R_S,
-    NOOP,     R_S,
+    NOOP,     R_S_INC,
     D_P,      R_S_INC,
     D_PCL,    R_S_INC,
     D_PCH,    R_PC_SYNC
@@ -283,8 +283,8 @@ public class W65C02 {
   };
   private static final HalfStep[] HS_STACK_PULL = new HalfStep[] {
     D_OPCODE, R_PC,
-    NOOP,     R_S,
-    D_REG,    R_S_INC,
+    NOOP,     R_S_INC,
+    D_REG,    R_S,
     NOOP,     R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
@@ -569,16 +569,16 @@ public class W65C02 {
           break;
         case D_REG:
           switch(instructions[opcode & 0xFF]) {
-            case PLA: a = (byte)data.value(); break;
-            case PLX: x = (byte)data.value(); break;
-            case PLY: y = (byte)data.value(); break;
+            case PLA: a = (byte)data.value(); setNZ(a); break;
+            case PLX: x = (byte)data.value(); setNZ(x); break;
+            case PLY: y = (byte)data.value(); setNZ(y); break;
             case PLP: p = (byte)(data.value() | 0x20); break;
             default:
           }
           break;
         case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
         case PCL_D: data.value((byte)(pc & 0xFF)); break;
-        case P_D:   data.value(p); break;
+        case P_D:   data.value(p | BREAK); break;
         case REG_D:
           switch(instructions[opcode & 0xFF]) {
             case PHA: data.value(a); break;
@@ -648,7 +648,7 @@ public class W65C02 {
         case R_S_DEC: address.value(0x100 | ((s--) & 0xFF)); rwb.value(true); break;
         case R_S_INC: address.value(0x100 | ((++s) & 0xFF)); rwb.value(true); break;
         case W_S: address.value(0x100 | (s & 0xFF)); rwb.value(false); break;
-        case W_S_DEC: address.value(0x100 | ((--s) & 0xFF)); rwb.value(false); break;
+        case W_S_DEC: address.value(0x100 | ((s--) & 0xFF)); rwb.value(false); break;
         case MODIFY:
           switch(instructions[opcode & 0xFF]) {
             case ASL: setCIf((operand & 0x80) != 0); operand <<= 1; setNZ(operand); break;
@@ -665,7 +665,7 @@ public class W65C02 {
         case R_FFFC: address.value(0xFFFC); rwb.value(true); break;
         case R_FFFD: address.value(0xFFFD); rwb.value(true); break;
         case R_FFFE: address.value(0xFFFE); rwb.value(true); break;
-        case R_FFFF: address.value(0xFFFF); rwb.value(true); break;
+        case R_FFFF: address.value(0xFFFF); rwb.value(true); p |= INTERRUPT_DISABLE; p &= ~DECIMAL; break;
         case R_PC_AD_SYNC:
           pc = (short)((adh << 8) | (adl & 0xFF));
           // intentional fallthrough
