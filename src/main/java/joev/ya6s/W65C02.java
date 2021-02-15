@@ -99,7 +99,7 @@ public class W65C02 {
     R_PC,
     R_PC_INC,
     R_PC_SYNC,
-    R_PC_INC_SYNC,
+    R_PC_INC_SYNC, R_PC_INC_SYNC_COND,
     R_PC_AD_SYNC,
     R_AD, R_AD_INC, R_AD_X, R_AD_X_INC,
     R_FFFC, R_FFFD,
@@ -114,6 +114,7 @@ public class W65C02 {
     RW_AD_REG, RW_AD_X_REG, RW_AD_Y_REG,
     RW_AA, RW_AA_Y,
     MODIFY,
+    OFFSET_PC,
     NOOP
   };
   private static final HalfStep[][] halfsteps = new HalfStep[256][];
@@ -230,6 +231,11 @@ public class W65C02 {
     D_ADH,     R_PC,
     NOOP,      RW_AD_Y_REG,
     D_OPERAND, R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_RELATIVE = new HalfStep[] {
+    D_OPCODE,  R_PC_INC,
+    D_OPERAND, R_PC_INC_SYNC_COND,
+    OFFSET_PC, R_PC_INC_SYNC
   };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
     D_OPCODE, R_PC_INC,
@@ -366,6 +372,7 @@ public class W65C02 {
           }
           break;
         case ABSOLUTE_Y: halfsteps[opcode] = HS_ABSOLUTE_Y; break;
+        case RELATIVE: halfsteps[opcode] = HS_RELATIVE; break;
       }
     }
   }
@@ -483,6 +490,7 @@ public class W65C02 {
         case D_P: p = (byte)(data.value() | 0x20); break;
         case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
         case PCL_D: data.value((byte)(pc & 0xFF)); break;
+        case OFFSET_PC: pc += operand; break;
         case R_PC: address.value(pc); rwb.value(true); break;
         case R_PC_INC: address.value(++pc); rwb.value(true); break;
         case R_AD_INC: adl++; if(adl == 0) adh++; // intentional fallthrough to R_AD
@@ -672,6 +680,24 @@ public class W65C02 {
           sync.value(true);
           resetting = !resb.value();
           halfstep = -1; // will be incremented to 0 at end of loop.
+          break;
+        case R_PC_INC_SYNC_COND:
+          Instruction ins = instructions[opcode & 0xFF];
+          if(!((ins == BRA) ||
+              ((ins == BPL) && ((p & NEGATIVE) == 0)) ||
+              ((ins == BMI) && ((p & NEGATIVE) != 0)) ||
+              ((ins == BVC) && ((p & OVERFLOW) == 0)) ||
+              ((ins == BVS) && ((p & OVERFLOW) != 0)) ||
+              ((ins == BCC) && ((p & CARRY)    == 0)) ||
+              ((ins == BCS) && ((p & CARRY)    != 0)) ||
+              ((ins == BNE) && ((p & ZERO)     == 0)) ||
+              ((ins == BEQ) && ((p & ZERO)     != 0)))) {
+            address.value(++pc);
+            rwb.value(true);
+            sync.value(true);
+            resetting = !resb.value();
+            halfstep = -1; // will be incremented to 0 at end of loop.
+          }
           break;
         case NOOP: break;
       }
