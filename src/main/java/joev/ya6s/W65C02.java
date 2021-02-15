@@ -107,8 +107,8 @@ public class W65C02 {
     D_ADL, D_ADH, D_ADZ,
     D_AAL, D_AAH,
     D_PCL, D_PCH,
-    D_P,
-    PCH_D, PCL_D, P_D,
+    D_P, D_REG,
+    PCH_D, PCL_D, P_D, REG_D,
     R_S, R_S_DEC, R_S_INC, R_S_PC_INC,
     W_S, W_S_DEC,
     RW_AD_REG, RW_AD_X_REG, RW_AD_Y_REG,
@@ -261,6 +261,17 @@ public class W65C02 {
     D_PCL,     R_AD_INC,
     D_PCH,     R_PC_SYNC
   };
+  private static final HalfStep[] HS_STACK_PUSH = new HalfStep[] {
+    D_OPCODE,  R_PC,
+    REG_D,     W_S_DEC,
+    NOOP,      R_PC_INC_SYNC
+  };
+  private static final HalfStep[] HS_STACK_PULL = new HalfStep[] {
+    D_OPCODE, R_PC,
+    NOOP,     R_S,
+    D_REG,    R_S_INC,
+    NOOP,     R_PC_INC_SYNC
+  };
   private static final HalfStep[] HS_STOP = new HalfStep[] {
     D_OPCODE, R_PC_INC,
     NOOP,     R_PC,
@@ -370,6 +381,10 @@ public class W65C02 {
             case BRK: halfsteps[opcode] = HS_IRQ_BRK; break;
             case RTS: halfsteps[opcode] = HS_IMPLIED_RTS; break;
             case RTI: halfsteps[opcode] = HS_IMPLIED_RTI; break;
+            case PHA, PHX, PHY, PHP:
+                      halfsteps[opcode] = HS_STACK_PUSH; break;
+            case PLA, PLX, PLY, PLP:
+                      halfsteps[opcode] = HS_STACK_PULL; break;
             default:  halfsteps[opcode] = HS_IMPLIED;
           }
           break;
@@ -534,9 +549,27 @@ public class W65C02 {
             default:
           }
           break;
+        case D_REG:
+          switch(instructions[opcode & 0xFF]) {
+            case PLA: a = (byte)data.value(); break;
+            case PLX: x = (byte)data.value(); break;
+            case PLY: y = (byte)data.value(); break;
+            case PLP: p = (byte)(data.value() | 0x20); break;
+            default:
+          }
+          break;
         case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
         case PCL_D: data.value((byte)(pc & 0xFF)); break;
         case P_D:   data.value(p); break;
+        case REG_D:
+          switch(instructions[opcode & 0xFF]) {
+            case PHA: data.value(a); break;
+            case PHX: data.value(x); break;
+            case PHY: data.value(y); break;
+            case PHP: data.value(p | BREAK); break;
+            default:
+          }
+          break;
         case OFFSET_PC: pc += offset; break;
         case R_PC: address.value(pc); rwb.value(true); break;
         case R_PC_INC_INC: ++pc; // Intentional fallthrough to R_PC_INC
