@@ -769,8 +769,8 @@ public class W65C02 {
                 setNZ(a);
               }
               break;
-            case INC: if(addressingModes[opcode] == IMPLIED) { setNZ(++a); } break;
-            case DEC: if(addressingModes[opcode] == IMPLIED) { setNZ(--a); } break;
+            case INC: if(addressingModes[opcode & 0xFF] == IMPLIED) { setNZ(++a); } break;
+            case DEC: if(addressingModes[opcode & 0xFF] == IMPLIED) { setNZ(--a); } break;
 
             case STP: stopped = true; break;
             default:
