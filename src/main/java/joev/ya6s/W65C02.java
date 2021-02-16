@@ -618,12 +618,19 @@ public class W65C02 {
                       data.value(operand); rwb.value(false); break;
             default: rwb.value(true);
           }
+          if(addressingModes[opcode & 0xFF] != ZERO_PAGE_X && wouldCarry(adl, x)) {
+            adh++;
+          }
           address.value((adh << 8) | ((adl + x) & 0xFF));
           break;
         case RW_AD_Y_REG:
           switch(instructions[opcode & 0xFF]) {
+            case STA: data.value(a); rwb.value(false); break;
             case STX: data.value(x); rwb.value(false); break;
             default: rwb.value(true);
+          }
+          if(addressingModes[opcode & 0xFF] != ZERO_PAGE_Y && wouldCarry(adl, y)) {
+            adh++;
           }
           address.value((adh << 8) | ((adl + y) & 0xFF));
           break;
@@ -653,8 +660,8 @@ public class W65C02 {
           switch(instructions[opcode & 0xFF]) {
             case ASL: setCIf((operand & 0x80) != 0); operand <<= 1; setNZ(operand); break;
             case ROL: int b0 = carry() ? 1 : 0; setCIf((operand & 0x80) != 0); operand <<= 1; operand |= b0; setNZ(operand); break;
-            case LSR: setCIf((operand & 0x01) != 0); operand >>= 1; setNZ(operand); break;
-            case ROR: int b7 = carry() ? 0x80 : 0; setCIf((operand & 0x01) != 0); operand >>= 1; operand |= b7; setNZ(operand); break;
+            case LSR: setCIf((operand & 0x01) != 0); operand >>= 1; operand &= 0x7F; setNZ(operand); break;
+            case ROR: int b7 = carry() ? 0x80 : 0; setCIf((operand & 0x01) != 0); operand >>= 1; operand &= 0x7F; operand |= b7; setNZ(operand); break;
             case INC: operand++; setNZ(operand); break;
             case DEC: operand--; setNZ(operand); break;
             case RMB: operand &= ~(1 << ((opcode & 0b01110000) >> 4)); break;
@@ -705,9 +712,9 @@ public class W65C02 {
             case AND: a &= operand; setNZ(a); break;
             case ORA: a |= operand; setNZ(a); break;
             case EOR: a ^= operand; setNZ(a); break;
-            case CMP: setNZ((byte)(a - operand)); setCIf(a >= operand); break;
-            case CPX: setNZ((byte)(x - operand)); setCIf(x >= operand); break;
-            case CPY: setNZ((byte)(y - operand)); setCIf(y >= operand); break;
+            case CMP: setNZ((byte)(a - operand)); setCIf((a & 0xFF) >= (operand & 0xFF)); break;
+            case CPX: setNZ((byte)(x - operand)); setCIf((x & 0xFF) >= (operand & 0xFF)); break;
+            case CPY: setNZ((byte)(y - operand)); setCIf((y & 0xFF) >= (operand & 0xFF)); break;
             case BIT:
               p = (byte)((a & operand) == 0 ? p | ZERO : p & ~ZERO);
               p = (byte)((operand & 0x40) != 0 ? p | OVERFLOW : p & ~OVERFLOW);
@@ -758,6 +765,7 @@ public class W65C02 {
               if(addressingModes[opcode] == IMPLIED) {
                 setCIf((a & 0x01) != 0);
                 a >>= 1;
+                a &= 0x7F;
                 setNZ(a);
               }
               break;
@@ -766,6 +774,7 @@ public class W65C02 {
                 int b7 = carry() ? 0x80 : 0;
                 setCIf((a & 0x01) != 0);
                 a >>= 1;
+                a &= 0x7F;
                 a |= b7;
                 setNZ(a);
               }
