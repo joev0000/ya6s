@@ -279,7 +279,7 @@ public class ImmediateTests {
         """, 6,
         Assertions::assertNotNegative,
         Assertions::assertNotZero,
-        Assertions::assertNotCarry,
+        Assertions::assertCarry,
         Assertions::assertNotOverflow,
         Assertions.assertA(0x02)),
       params("SBC without borrow", """
@@ -289,7 +289,7 @@ public class ImmediateTests {
         """, 6,
         Assertions::assertNotNegative,
         Assertions::assertNotZero,
-        Assertions::assertNotCarry,
+        Assertions::assertCarry,
         Assertions::assertNotOverflow,
         Assertions.assertA(0x03))
     );

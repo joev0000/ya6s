@@ -91,7 +91,7 @@ public class W65C02 {
     CPY, CMP, XXX, XXX, CPY, CMP, DEC, SMB, INY, CMP, DEX, WAI, CPY, CMP, DEC, BBS,
     BNE, CMP, CMP, XXX, XXX, CMP, DEC, SMB, CLD, CMP, PHX, STP, XXX, CMP, DEC, BBS,
     CPX, SBC, XXX, XXX, CPX, SBC, INC, SMB, INX, SBC, NOP, XXX, CPX, SBC, INC, BBS,
-    BEQ, SBC, SBC, XXX, XXX, SBC, INC, SMB, SED, SBC, PLX, XXX, XXX, SBC, SBC, BBS
+    BEQ, SBC, SBC, XXX, XXX, SBC, INC, SMB, SED, SBC, PLX, XXX, XXX, SBC, INC, BBS
   };
 
   enum HalfStep {
@@ -521,7 +521,7 @@ public class W65C02 {
   public String status() {
     return String.format("%c%c-%c%c%c%c%c",
       (p & NEGATIVE)          == 0 ? 'n' : 'N',
-      (p & OVERFLOW)          == 0 ? 'o' : 'O',
+      (p & OVERFLOW)          == 0 ? 'v' : 'V',
       (p & BREAK)             == 0 ? 'b' : 'B',
       (p & DECIMAL)           == 0 ? 'd' : 'D',
       (p & INTERRUPT_DISABLE) == 0 ? 'i' : 'I',
@@ -722,26 +722,35 @@ public class W65C02 {
               break;
             case ADC:
               if((p & DECIMAL) == 0) {
-                a += operand + (carry() ? 1 : 0);
-                setCV((byte)(a - operand - (carry() ? 1 : 0)), operand, a);
+                boolean c = carry();
+                setCV(a, operand, c);
+                a += operand + (c ? 1 : 0);
               }
               else {
-                // add low digits, check for carry
-                // add high digits plus carry...
                 byte lo = (byte)((a & 0x0F) + (operand & 0x0F) + (carry() ? 1 : 0));
-                if(lo >= 0x0A) { lo += 0x06; lo &= 0x1F; }
-                a = (byte)((a & 0xF0) + (operand & 0xF0) + lo);
-                if(((a >> 4) & 0x0F) >= 0x0A) { a += 0x60; p |= CARRY; } else { p &= ~CARRY; }
+                byte c = 0;
+                if(lo >= 0x0A) { lo += 0x06; lo &= 0x0F; c = (byte)1; }
+                byte hi = (byte)(((a >> 4) & 0x0F) + ((operand >> 4) & 0x0F) + c);
+                if(hi >= 0x0A) { hi += 0x06; p |= CARRY; } else { p &= ~CARRY; }
+                a = (byte)((hi << 4) | lo);
                 // What about OVERFLOW?
               }
               setNZ(a);
               break;
             case SBC:
               if((p & DECIMAL) == 0) {
-                a += ~operand + (carry() ? 1 : 0);
-                setCV((byte)(a - (~operand) - (carry() ? 1 : 0)), operand, a);
+                boolean c = carry();
+                setCV(a, (byte)(~operand), c);
+                a += (byte)(~operand) + (c ? 1 : 0);
               }
               else {
+                byte lo = (byte)((a & 0x0F) - (operand & 0x0F) - (carry() ? 0 : 1));
+                byte c = 0;
+                if(lo < 0) { lo += 0x0A; lo &= 0x0F; c = (byte)1; }
+                byte hi = (byte)(((a >> 4) & 0x0F) - ((operand >> 4) & 0x0F) - c);
+                if(hi < 0) { hi += 0x0A; p &= ~CARRY; } else { p |= CARRY; }
+                a = (byte)((hi << 4) | lo);
+                // What about OVERFLOW?
               }
               setNZ(a);
               break;
@@ -863,11 +872,12 @@ public class W65C02 {
    *
    * @param a the first operand
    * @param b the second operand
-   * @param result the addition or subtraction of the operands
+   * @param carry the carry in
    */
-  private void setCV(byte a, byte b, byte result) {
-    p = (((a & b) | ((a ^ b) & ~result)) & (byte)0x80) != 0 ? (byte)(p | CARRY) : (byte)(p & ~CARRY);
-    p = ((a ^ result) & (b ^ result) & (byte)0x80) != 0 ? (byte)(p | OVERFLOW) : (byte)(p & ~OVERFLOW);
+  private void setCV(byte a, byte b, boolean carry) {
+    byte result = (byte)(a + b + (carry ? 1: 0));
+    p = ((((a & b) | ((a ^ b) & ~result)) & 0x80) != 0) ? (byte)(p | CARRY) : (byte)(p & ~CARRY);
+    p = ((((a ^ result) & (b ^ result)) & 0x80) != 0) ? (byte)(p | OVERFLOW) : (byte)(p & ~OVERFLOW);
   }
 
   /**

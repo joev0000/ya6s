@@ -34,7 +34,15 @@ public class ContinueCommand implements Command {
   @Override
   public Command execute(Backplane backplane, W65C02 cpu) {
     Signal clock = backplane.clock();
+    short oldPC = 0;
     while(!cpu.stopped()) { // or hit a breakpoint
+      if(backplane.sync().value()) {
+        if(cpu.pc() == oldPC) {
+          System.out.println("Loop detected.");
+          break;
+        }
+        oldPC = cpu.pc();
+      }
       clock.value(true);
       clock.value(false);
     }
