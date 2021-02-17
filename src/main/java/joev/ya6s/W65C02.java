@@ -409,7 +409,7 @@ public class W65C02 {
           break;
         case ABSOLUTE:
           switch(instructions[opcode]) {
-            case ASL, ROL, LSR, ROR, INC, DEC:
+            case ASL, ROL, LSR, ROR, INC, DEC, TRB, TSB:
                       halfsteps[opcode] = HS_ABSOLUTE_RMW; break;
             case JMP: halfsteps[opcode] = HS_ABSOLUTE_JUMP; break;
             case JSR: halfsteps[opcode] = HS_ABSOLUTE_JSR; break;
@@ -418,7 +418,7 @@ public class W65C02 {
           break;
         case ZERO_PAGE:
           switch(instructions[opcode]) {
-            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB:
+            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB, TRB, TSB:
                      halfsteps[opcode] = HS_ZERO_PAGE_RMW; break;
             default: halfsteps[opcode] = HS_ZERO_PAGE;
           }
@@ -609,7 +609,7 @@ public class W65C02 {
             case STY: data.value(y); rwb.value(false); break;
             case STA: data.value(a); rwb.value(false); break;
             case STZ: data.value(0); rwb.value(false); break;
-            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB:
+            case ASL, ROL, LSR, ROR, INC, DEC, RMB, SMB, TRB, TSB:
                       data.value(operand); rwb.value(false); break;
             default: rwb.value(true);
           }
@@ -672,6 +672,8 @@ public class W65C02 {
             case DEC: operand--; setNZ(operand); break;
             case RMB: operand &= ~(1 << ((opcode & 0b01110000) >> 4)); break;
             case SMB: operand |=  (1 << ((opcode & 0b01110000) >> 4)); break;
+            case TRB: p = (byte)(((operand & a) == 0) ? p | ZERO : p & ~ZERO); operand &= ~a; break;
+            case TSB: p = (byte)(((operand & a) == 0) ? p | ZERO : p & ~ZERO); operand |=  a; break;
             default:
           }
           break;
