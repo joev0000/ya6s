@@ -337,6 +337,7 @@ public class W65C02 {
             case 0b00011100: addressingMode = ABSOLUTE;   break; // TRB $xxxx
             case 0b00100000: addressingMode = ABSOLUTE;   break; // JSR $xxxx
             case 0b00111100: addressingMode = ABSOLUTE_X; break; // BIT $xxxx,X
+            case 0b01011100: addressingMode = ABSOLUTE;   break; // NOP Abs
             case 0b01101100: addressingMode = INDIRECT;   break; // JMP ($xxxx)
             case 0b01111100: addressingMode = INDIRECT_X; break; // JMP ($xxxx,X)
             case 0b10000000: addressingMode = RELATIVE;   break; // BRA #$xx
@@ -344,7 +345,9 @@ public class W65C02 {
             case 0b10100000: addressingMode = IMMEDIATE;  break; // LDY #$xx
             case 0b10111100: addressingMode = ABSOLUTE_X; break; // LDY $xxxx,X
             case 0b11000000: addressingMode = IMMEDIATE;  break; // CPY #$xx
+            case 0b11011100: addressingMode = ABSOLUTE;   break; // NOP Abs
             case 0b11100000: addressingMode = IMMEDIATE;  break; // CPX #$xx
+            case 0b11111100: addressingMode = ABSOLUTE;   break; // NOP Abs
           }
           break;
         case 0b01:
@@ -380,6 +383,7 @@ public class W65C02 {
           break;
         case 0b11:
           switch(opcode & 0b00011100) {
+            case 0b00000, 0b10000: addressingMode = IMPLIED;   break; // NOP _3
             case 0b00100, 0b10100: addressingMode = ZERO_PAGE; break;
             case 0b01000, 0b11000: addressingMode = IMPLIED;   break;
             case 0b01100, 0b11100: addressingMode = RELATIVE_ZP; break;
@@ -550,7 +554,9 @@ public class W65C02 {
       }
       switch(hs) {
         case D_OPCODE:
-          opcode = (byte)data.value(); sync.value(false); break;
+          opcode = (byte)data.value(); sync.value(false);
+          //System.out.format("PC: $%04X (%s) A: $%02X  X: $%02X  Y: $%02X  S: $%02X  P: $%02X (%s)%n", pc, instructions[opcode & 0xFF], a, x, y, s, p, status());
+          break;
         case D_OPERAND: operand = (byte)data.value(); break;
         case D_OFFSET: offset = (byte)data.value(); break;
         case D_PCL: pc = (short)((pc & 0xFF00) | (byte)data.value()); break;
@@ -595,8 +601,8 @@ public class W65C02 {
         case R_AD_INC: adl++; if(adl == 0) adh++; // intentional fallthrough to R_AD
         case R_AD:
           address.value((adh << 8) | (adl & 0xFF)); rwb.value(true); break;
-        case R_AD_X_INC: adl++; // intentional fallthrough to R_AD_X
-        case R_AD_X: address.value((adh << 8) | ((adl + x) & 0xFF)); rwb.value(true); break;
+        case R_AD_X_INC: {byte c = (byte)(((byte)(adl + x + 1) == 0) ? 1 : 0); address.value(((adh + c) << 8) | ((adl + x + 1) & 0xFF)); rwb.value(true);}; break;
+        case R_AD_X: {byte c = (byte)(((byte)(adl + x) == 0) ? 1 : 0); address.value(((adh + c) << 8) | ((adl + x) & 0xFF)); rwb.value(true);} break;
         case RW_AD_REG:
           switch(instructions[opcode & 0xFF]) {
             case STX: data.value(x); rwb.value(false); break;
@@ -717,8 +723,11 @@ public class W65C02 {
             case CPY: setNZ((byte)(y - operand)); setCIf((y & 0xFF) >= (operand & 0xFF)); break;
             case BIT:
               p = (byte)((a & operand) == 0 ? p | ZERO : p & ~ZERO);
-              p = (byte)((operand & 0x40) != 0 ? p | OVERFLOW : p & ~OVERFLOW);
-              p = (byte)((operand & 0x80) != 0 ? p | NEGATIVE : p & ~NEGATIVE);
+              if(addressingModes[opcode & 0xFF] != IMMEDIATE) {
+                // BIT Imm does not modify V or N.
+                p = (byte)((operand & 0x40) != 0 ? p | OVERFLOW : p & ~OVERFLOW);
+                p = (byte)((operand & 0x80) != 0 ? p | NEGATIVE : p & ~NEGATIVE);
+              }
               break;
             case ADC:
               if((p & DECIMAL) == 0) {

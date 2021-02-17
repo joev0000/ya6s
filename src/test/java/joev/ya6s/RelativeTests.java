@@ -78,17 +78,21 @@ public class RelativeTests {
         Assertions.assertA(0x42)),
 
       params("BVC", """
-        89 00 ; BIT $#00
-        50 5C ; BVC #$5C ($260)
+        A9 00 ; LDA #$00
+        85 40 ; STA $40
+        24 40 ; BIT $40
+        50 58 ; BVC #$58 ($260)
         A9 23 ; LDA #$23
-        """, 7,
+        """, 13,
         Assertions.assertA(0x42)),
 
       params("BVS", """
-        89 40 ; BIT $#40
-        70 5C ; BVS #$5C ($260)
+        A9 40 ; LDA #$40
+        85 40 ; STA $40
+        24 40 ; BIT $40
+        70 58 ; BVS #$58 ($260)
         A9 23 ; LDA #$23
-        """, 7,
+        """, 13,
         Assertions.assertA(0x42)),
 
       params("BEQ false", """

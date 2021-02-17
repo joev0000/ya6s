@@ -51,6 +51,39 @@ public class ZeroPageTests {
         """, 10,
         Assertions.assertY(0x23)),
 
+      params("BIT zero", """
+        A9 3C ; LDA #$3C  00111100
+        85 40 ; STA $40
+        A9 C3 ; LDA #$C3  11000011
+        24 40 ; BIT $40   00111100
+        """, 10,
+        Assertions::assertNotNegative,
+        Assertions::assertZero,
+        Assertions::assertNotOverflow,
+        Assertions.assertA(0xC3)),
+
+      params("BIT negative", """
+        A9 B0 ; LDA #$B0
+        85 40 ; STA $40
+        A9 03 ; LDA #$03
+        24 40 ; BIT $40
+        """, 10,
+        Assertions::assertNegative,
+        Assertions::assertZero,
+        Assertions::assertNotOverflow,
+        Assertions.assertA(0x03)),
+
+      params("BIT overflow", """
+        A9 40 ; LDA #$40
+        85 40 ; STA $40
+        A9 03 ; LDA #$03
+        24 40 ; BIT $40
+        """, 10,
+        Assertions::assertNotNegative,
+        Assertions::assertZero,
+        Assertions::assertOverflow,
+        Assertions.assertA(0x03)),
+
       params("ASL", """
         A9 EA    ; LDA #$EA
         85 10    ; STA $10

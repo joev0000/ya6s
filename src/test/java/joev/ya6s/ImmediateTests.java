@@ -38,29 +38,29 @@ public class ImmediateTests {
         Assertions::assertZero,
         Assertions.assertA(0x00)),
 
-      params("BIT zero", """
+      params("BIT zero immediate does not modify NV", """
         A9 C3 ; LDA #$C3  11000011
         89 3C ; BIT #$3C  00111100
-        """, 4,
-        Assertions::assertNotNegative,
-        Assertions::assertZero,
-        Assertions::assertNotOverflow,
-        Assertions.assertA(0xC3)),
-      params("BIT negative", """
-        A9 03 ; LDA #$03
-        89 B0 ; BIT #$F0
         """, 4,
         Assertions::assertNegative,
         Assertions::assertZero,
         Assertions::assertNotOverflow,
-        Assertions.assertA(0x03)),
-      params("BIT overflow", """
+        Assertions.assertA(0xC3)),
+      params("BIT negative immediate does not modify NV", """
         A9 03 ; LDA #$03
-        89 40 ; BIT #$F0
+        89 B0 ; BIT #$B0
         """, 4,
         Assertions::assertNotNegative,
         Assertions::assertZero,
-        Assertions::assertOverflow,
+        Assertions::assertNotOverflow,
+        Assertions.assertA(0x03)),
+      params("BIT overflow immediate does not modify NV", """
+        A9 03 ; LDA #$03
+        89 40 ; BIT #$40
+        """, 4,
+        Assertions::assertNotNegative,
+        Assertions::assertZero,
+        Assertions::assertNotOverflow,
         Assertions.assertA(0x03)),
 
       params("CMP equal", """
