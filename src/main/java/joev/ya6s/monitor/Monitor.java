@@ -2,6 +2,7 @@ package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
 import joev.ya6s.W65C02;
+import joev.ya6s.signals.Signal;
 import java.io.InputStream;
 
 /**
@@ -31,13 +32,28 @@ public class Monitor {
    * Run the monitor loop.  Never exits.
    */
   public void run() {
+    Signal clock = backplane.clock();
     Command command = null;
     while(true) {
-      System.out.format(">>> ");
       try {
+        System.out.format(">>> ");
         command = parser.command();
-        System.out.format("command: %s%n", command);
-        command.execute(backplane, cpu);
+        while(!command.equals(ContinueCommand.instance())) {
+          command.execute(backplane, cpu);
+          System.out.format(">>> ");
+          command = parser.command();
+        }
+        while(System.in.available() == 0) {
+          clock.value(true);
+          clock.value(false);
+        }
+        System.in.read();
+        while(backplane.sync().value() == false) {
+          clock.value(true);
+          clock.value(false);
+        }
+        System.out.println("Paused.");
+        System.out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
       }
       catch (Exception e) {
         System.out.format("ERROR: %s%n", e.getMessage());
