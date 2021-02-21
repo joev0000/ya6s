@@ -17,17 +17,28 @@ repositories {
 }
 
 dependencies {
+  // https://mvnrepository.com/artifact/net.java.dev.jna/jna
+  implementation group: 'net.java.dev.jna', name: 'jna', version: '5.7.0'
+
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
   testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
   testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
 compileJava {
-  options.compilerArgs += ['-Xlint:all', '-Werror']
+  options.compilerArgs += [
+    '-Xlint:all',
+    '-Xlint:-requires-automatic',
+    '-Xlint:-requires-transitive-automatic',
+    '-Werror']
 }
 
 compileTestJava {
-  options.compilerArgs += ['-Xlint:all', '-Werror']
+  options.compilerArgs += [
+    '-Xlint:all',
+    '-Xlint:-requires-automatic',
+    '-Xlint:-requires-transitive-automatic',
+    '-Werror']
 }
 
 javacc {
