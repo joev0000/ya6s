@@ -5,8 +5,11 @@ import com.sun.jna.Native;
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
 
+/**
+ * An interface to the Posix termios library.
+ */
 public interface Termios extends Library {
-  Termios instance = Native.load("c", Termios.class);
+  public static final Termios instance = Native.load("c", Termios.class);
 
   @FieldOrder({"c_iflag", "c_oflag", "c_cflag", "c_lflag", "c_line", "c_cc", "c_ispeed", "c_ospeed"})
   public static class termios extends Structure {
@@ -61,23 +64,23 @@ public interface Termios extends Library {
   public static final int IEXTEN = 0100000;
 
   // c_cc characters
-  public static final int VINTR = 0;
-  public static final int VQUIT = 1;
-  public static final int VERASE = 2;
-  public static final int VKILL = 3;
-  public static final int VEOF = 4;
-  public static final int VTIME = 5;
-  public static final int VMIN = 6;
-  public static final int VSWTC = 7;
-  public static final int VSTART = 8;
-  public static final int VSTOP = 9;
-  public static final int VSUSP = 10;
-  public static final int VEOL = 11;
+  public static final int VINTR    =  0;
+  public static final int VQUIT    =  1;
+  public static final int VERASE   =  2;
+  public static final int VKILL    =  3;
+  public static final int VEOF     =  4;
+  public static final int VTIME    =  5;
+  public static final int VMIN     =  6;
+  public static final int VSWTC    =  7;
+  public static final int VSTART   =  8;
+  public static final int VSTOP    =  9;
+  public static final int VSUSP    = 10;
+  public static final int VEOL     = 11;
   public static final int VREPRINT = 12;
   public static final int VDISCARD = 13;
-  public static final int VWERASE = 14;
-  public static final int VLNEXT = 15;
-  public static final int VEOL2 = 16;
+  public static final int VWERASE  = 14;
+  public static final int VLNEXT   = 15;
+  public static final int VEOL2    = 16;
 
   // c_cflags
   public static final int CSIZE   = 0000060;
@@ -92,12 +95,26 @@ public interface Termios extends Library {
   public static final int HUPCL   = 0002000;
   public static final int CLOCAL  = 0004000;
 
-  public static final int TCSANOW = 0;
+  public static final int TCSANOW   = 0;
   public static final int TCSADRAIN = 1;
   public static final int TCSAFLUSH = 2;
 
+  /**
+   * Get the parameters associated with the terminal.
+   *
+   * @param filedes the file descriptor
+   * @param termios_p the termios structure that will receieve the value.
+   * @return 0 upon successful completion, -1 if an error occurred.
+   */
   public int tcgetattr(int filedes, termios termios_p);
-  public int tcsetattr(int filedes, int optional_actions, termios termios_p);
 
-  public int read(int filedes, int[] buf, int nbyte);
+  /**
+   * Set the parameters associated with the terminal.
+   *
+   * @param filedes the file descriptor
+   * @param optional_actions a bitmap of the TCS optional actions.
+   * @param termios_p the termios structure that contains the values to set.
+   * @return 0 upon successful completion, -1 if an error occurred.
+   */
+  public int tcsetattr(int filedes, int optional_actions, termios termios_p);
 }

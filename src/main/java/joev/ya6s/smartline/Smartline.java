@@ -3,20 +3,33 @@ package joev.ya6s.smartline;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import static joev.ya6s.smartline.Termios.*;
 
-class Smartline implements AutoCloseable {
+/**
+ * Smartline is a raw-mode command line helper tool, providing lightweight
+ * interactive editing of commands.
+ */
+public class Smartline implements AutoCloseable {
   private final InputStream in;
-  private final OutputStream out;
+  private final PrintStream out;
   private Termios.termios origTermios = null;
   private final List<String> history = new ArrayList<>();
 
+  /**
+   * Create a new Smartline with the given input and output streams.
+   *
+   * TODO: Make this non-smart when using an Inputstream that's not System.in
+   *
+   * @param in the InputStream, if System.in, will activate Smartine editing.
+   * @param out the OutputStream
+   */
   public Smartline(InputStream in, OutputStream out) {
     this.in = in;
-    this.out = out;
+    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
 
     if(in.equals(System.in)) {
       Termios.termios termios = new Termios.termios();
@@ -24,28 +37,46 @@ class Smartline implements AutoCloseable {
       Termios.instance.tcgetattr(0, origTermios);
       Termios.instance.tcgetattr(0, termios);
       termios.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-      termios.c_oflag &= ~(OPOST);
       termios.c_cflag |=  (CS8);
       termios.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
       termios.c_cc[VMIN] = 0;
-      termios.c_cc[VTIME] = 1;
-      Termios.instance.tcsetattr(0, 0, termios);
+      termios.c_cc[VTIME] = 0;
+      Termios.instance.tcsetattr(0, TCSAFLUSH, termios);
+
+      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+        public void run() { close(); }
+      }));
     }
   }
 
+  /**
+   * The states of the internal state machine to parse ECMA-48 sequences
+   */
   private enum State {
     START,
     ESCAPE,
     CSI
   }
 
+  /**
+   * Read a line. Uses ECMA-48 sequences to allow in-line editing and history.
+   *
+   * @param prompt the prompt to display before reading.
+   * @return a line of input
+   * @throws IOException if anything goes wrong.
+   */
   public String readLine(String prompt) throws IOException {
     StringBuilder sb = new StringBuilder();
+    Termios.termios termios = new Termios.termios();
+    Termios.instance.tcgetattr(0, termios);
+    termios.c_cc[VMIN] = 1;
+    termios.c_cc[VTIME] = 0;
+    Termios.instance.tcsetattr(0, TCSAFLUSH, termios);
     State state = State.START;
     boolean done = false;
     int cursor = 0;
     int historyCursor = history.size() - 1;
-    System.out.print(prompt);
+    out.print(prompt);
     while(!done) {
       int c = read();
       if(c != -1) {
@@ -57,7 +88,7 @@ class Smartline implements AutoCloseable {
                 if(cursor > 0) {
                   sb.deleteCharAt(--cursor);
                   // CUB, DCH
-                  System.out.format("%c%c%c%c", 0x9B, 0x44, 0x9B, 0x50);
+                  out.format("%c%c%c%c", 0x9B, 0x44, 0x9B, 0x50);
                 }
                 break;
               case 0x1B: state = State.ESCAPE; break;
@@ -67,10 +98,10 @@ class Smartline implements AutoCloseable {
                   sb.append((char)c);
                 }
                 else {
-                  System.out.format("%c%c", 0x9B, '@');
+                  out.format("%c%c", 0x9B, '@');
                   sb.insert(cursor, (char)c);
                 }
-                System.out.print((char)c);
+                out.print((char)c);
                 cursor++;
             }
             break;
@@ -129,9 +160,18 @@ class Smartline implements AutoCloseable {
       }
     }
     addHistory(sb.toString());
+    out.write('\n');
+    Termios.instance.tcgetattr(0, termios);
+    termios.c_cc[VMIN] = 0;
+    termios.c_cc[VTIME] = 0;
+    Termios.instance.tcsetattr(0, TCSAFLUSH, termios);
     return sb.toString();
   }
 
+  /**
+   * Add a line to history, drop the oldest one if more than
+   * 1000 lines have been added.
+   */
   private void addHistory(String string) {
     history.add(string);
     if(history.size() > 1000) {
@@ -139,28 +179,38 @@ class Smartline implements AutoCloseable {
     }
   }
 
+  /**
+   * Attempt to read a single byte.
+   *
+   * @return a byte, or -1 if none is available.
+   */
   public int read() throws IOException {
     return in.read();
   }
 
+  /**
+   * Close the Smartline, reverting the terminal to normal mode.
+   */
   public void close() {
     if(origTermios != null) {
       Termios.instance.tcsetattr(1, 0, origTermios);
     }
   }
 
+  /**
+   * A small driver program to exercise Smartline.
+   */
   public static void main(String[] args) throws Exception {
     try(Smartline sl = new Smartline(System.in, System.out)) {
       String s;
       while(!(s = sl.readLine(">>> ")).equals("exit")) {
-        System.out.format("\r\nI read: %s [ ", s);
+        System.out.format("I read: %s [ ", s);
         byte[] b = s.getBytes();
         for(int i = 0 ; i < b.length; i++) {
           System.out.format("%02X ", b[i]);
         }
-        System.out.print("]\r\n");
+        System.out.println("]");
       }
-      System.out.print("\r\n");
     }
   }
 }

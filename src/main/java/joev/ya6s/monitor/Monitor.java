@@ -3,16 +3,21 @@ package joev.ya6s.monitor;
 import joev.ya6s.Backplane;
 import joev.ya6s.W65C02;
 import joev.ya6s.signals.Signal;
+import joev.ya6s.smartline.Smartline;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
 
 /**
  * A monitor for a system with a CPU and Backplane.
  */
 public class Monitor {
-  private final MonitorParser parser;
+  //private final MonitorParser parser;
   private final Backplane backplane;
   private final W65C02 cpu;
-  private final InputStream in;
+  private final Smartline sl;
+  private final PrintStream out;
 
   /**
    * Create a new Monitor.
@@ -21,43 +26,45 @@ public class Monitor {
    * @param cpu the CPU of the system.
    * @param in the input stream of the user commands.
    */
-  public Monitor(Backplane backplane, W65C02 cpu, InputStream in) {
+  public Monitor(Backplane backplane, W65C02 cpu, InputStream in, OutputStream out) {
     this.backplane = backplane;
     this.cpu = cpu;
-    this.in = in;
-    parser = new MonitorParser(in);
+    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
+    sl = new Smartline(in, out);
   }
 
   /**
    * Run the monitor loop.  Never exits.
    */
   public void run() {
+    MonitorParser parser;
     Signal clock = backplane.clock();
     Command command = null;
     while(true) {
       try {
-        System.out.format(">>> ");
+        String string = sl.readLine(">>> ");
+        parser = new MonitorParser(new StringReader(string));
         command = parser.command();
         while(!command.equals(ContinueCommand.instance())) {
           command.execute(backplane, cpu);
-          System.out.format(">>> ");
+          string = sl.readLine(">>> ");
+          parser = new MonitorParser(new StringReader(string));
           command = parser.command();
         }
-        while(System.in.available() == 0) {
+        out.println("(Ctrl-E to pause.)");
+        while(sl.read() != 0x05) { // ^E
           clock.value(true);
           clock.value(false);
         }
-        System.in.read();
         while(backplane.sync().value() == false) {
           clock.value(true);
           clock.value(false);
         }
-        System.out.println("Paused.");
-        System.out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
+        out.println("Paused.");
+        out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
       }
       catch (Exception e) {
-        System.out.format("ERROR: %s%n", e.getMessage());
-        parser.ReInit(in);
+        out.format("ERROR: %s%n", e.getMessage());
       }
     }
   }

@@ -42,21 +42,21 @@ Command command(): { Command c = null; }
     c = step() |
     c = load() |
     c = reset() |
-    "\n"
+    <EOF>
   ) {return c == null? NoopCommand.instance() : c;}
 }
 
 
 Command exit(): { }
 {
-  (<EXIT> "\n" | <EOF>) {
+  <EXIT> <EOF> {
     return ExitCommand.instance();
   }
 }
 
 Command reset(): { }
 {
-  <RESET> "\n" { return ResetCommand.instance(); }
+  <RESET> <EOF> { return ResetCommand.instance(); }
 }
 
 Command read(): {
@@ -64,7 +64,7 @@ Command read(): {
   Token end = null;
 }
 {
-  <READ> start=<HEX_NUMBER> (end=<HEX_NUMBER>)? "\n" {
+  <READ> start=<HEX_NUMBER> (end=<HEX_NUMBER>)? <EOF> {
     ReadCommand cmd;
     if(end != null) {
       cmd = new ReadCommand(
@@ -85,7 +85,7 @@ Command write(): {
 }
 {
   <WRITE> t=<HEX_NUMBER> { start = Integer.parseInt(t.image, 16); }
-  ( t=<HEX_NUMBER> { list.add(Integer.parseInt(t.image, 16)); } )* "\n"
+  ( t=<HEX_NUMBER> { list.add(Integer.parseInt(t.image, 16)); } )* <EOF>
   {
     byte[] data = new byte[list.size()];
     int i = 0;
@@ -98,12 +98,12 @@ Command write(): {
 
 Command cont(): { }
 {
-  <CONT> "\n" { return ContinueCommand.instance(); }
+  <CONT> <EOF> { return ContinueCommand.instance(); }
 }
 
 Command step(): { }
 {
-  <STEP> "\n" { return StepCommand.instance(); }
+  <STEP> <EOF> { return StepCommand.instance(); }
 }
 
 Command load(): {
@@ -111,5 +111,5 @@ Command load(): {
   Token path;
 }
 {
-  <LOAD> start=<HEX_NUMBER> path=<FILENAME> "\n" { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
+  <LOAD> start=<HEX_NUMBER> path=<FILENAME> <EOF> { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
 }
