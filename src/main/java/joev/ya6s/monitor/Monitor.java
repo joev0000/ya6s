@@ -18,6 +18,7 @@ public class Monitor {
   private final W65C02 cpu;
   private final Smartline sl;
   private final PrintStream out;
+  private final OutputStream console;
 
   /**
    * Create a new Monitor.
@@ -26,10 +27,11 @@ public class Monitor {
    * @param cpu the CPU of the system.
    * @param in the input stream of the user commands.
    */
-  public Monitor(Backplane backplane, W65C02 cpu, InputStream in, OutputStream out) {
+  public Monitor(Backplane backplane, W65C02 cpu, InputStream in, OutputStream out, OutputStream console) {
     this.backplane = backplane;
     this.cpu = cpu;
     this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
+    this.console = console;
     sl = new Smartline(in, out);
   }
 
@@ -40,6 +42,7 @@ public class Monitor {
     MonitorParser parser;
     Signal clock = backplane.clock();
     Command command = null;
+    int c;
     while(true) {
       try {
         String string = sl.readLine(">>> ");
@@ -52,7 +55,8 @@ public class Monitor {
           command = parser.command();
         }
         out.println("(Ctrl-E to pause.)");
-        while(sl.read() != 0x05) { // ^E
+        while((c = sl.read()) != 0x05) { // ^E
+          if(c >= 0) console.write(c);
           clock.value(true);
           clock.value(false);
         }
