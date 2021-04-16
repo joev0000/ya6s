@@ -1,11 +1,13 @@
 package joev.ya6s;
 
+import joev.ya6s.monitor.Monitor;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Map;
 
 /**
  * Module that simulates a 16550D-based UART.
@@ -128,15 +130,28 @@ public class UART {
    * Create a UART on the given Backplane, with the given base address and I/O streams.
    *
    * @param backplane the Backplane containing the address and data busses.
-   * @param baseAddress the base address of this module.
-   * @param in the InputStream that reads from the external device
-   * @param out the OutputStream that writes to the external device
+   * @param options the Map of options for this UART.
+   *   "base": the hex address of the base of the UART registers.
+   *   "port" (future): the decimal port number to listen on, or "tty" if the
+   *     monitor input and output should be used.
    */
-  public UART(Backplane backplane, short baseAddress, InputStream in, OutputStream out) {
+  public UART(Backplane backplane, Map<String, String> options) {
+    short base;
+    if(!options.containsKey("base")) {
+      throw new IllegalArgumentException("Missing \"base\" option.");
+    } else {
+      base = (short)Integer.parseInt(options.get("base"), 16);
+    }
+
+    if(!options.containsKey("port") || "tty".equals(options.get("port").toLowerCase())) {
+      this.in = Monitor.ttyIn;
+      this.out = Monitor.ttyOut;
+    } else {
+      throw new IllegalArgumentException("Non-\"tty\" value for \"port\" option not yet supported.");
+    }
+
     this.backplane   = backplane;
-    this.baseAddress = baseAddress;
-    this.out = out;
-    this.in  = in;
+    this.baseAddress = base;
 
     address = backplane.address();
     data    = backplane.data();

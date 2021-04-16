@@ -20,6 +20,9 @@ public class Monitor {
   private final PrintStream out;
   private final OutputStream console;
 
+  public static InputStream ttyIn;
+  public static OutputStream ttyOut;
+
   /**
    * Create a new Monitor.
    *
