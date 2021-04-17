@@ -2,8 +2,14 @@ package joev.ya6s;
 
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import joev.ya6s.monitor.Command;
 import joev.ya6s.monitor.Monitor;
+import joev.ya6s.monitor.MonitorParser;
+import joev.ya6s.monitor.ParseException;
 import joev.ya6s.signals.Signal;
 
 public class Main {
@@ -18,6 +24,21 @@ public class Main {
     final Signal resb = cpu.resb();
     resb.value(true);
 
+    if(args.length > 0) {
+      Files.lines(Path.of(args[0]))
+        .map(l -> l.trim())
+        .filter(l -> l.length() > 0)
+        .forEach(l -> {
+          try {
+            MonitorParser parser = new MonitorParser(new StringReader(l));
+            Command command = parser.command();
+            command.execute(backplane, cpu);
+          }
+          catch (ParseException pe) {
+            System.err.format("Error parsing \"%s\": %s%n", l, pe.getMessage());
+          }
+        });
+    }
     Monitor monitor = new Monitor(backplane, cpu, System.in, System.out, toUartIn);
     monitor.run();
   }
