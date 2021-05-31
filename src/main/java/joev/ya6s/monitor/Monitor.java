@@ -51,23 +51,34 @@ public class Monitor {
         String string = sl.readLine(">>> ");
         parser = new MonitorParser(new StringReader(string));
         command = parser.command();
+
+        // Run commands one at a time until a Continue command is parsed.
         while(!command.equals(ContinueCommand.instance())) {
           command.execute(backplane, cpu);
           string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));
           command = parser.command();
         }
+
+        // At this point, the Continue command was used.
         out.println("(Ctrl-E to pause.)");
-        while((c = sl.read()) != 0x05) { // ^E
+
+        // Cycle the clock until either the CPU is stopped, or if ^E is
+        // entered in the console.
+        while(!cpu.stopped() && (c = sl.read()) != 0x05) { // ^E
           if(c >= 0) console.write(c);
           clock.value(true);
           clock.value(false);
         }
+
+        // The processor is either stopped or paused. Cycle the clock
+        // until the next SYNC pulse- to make sure the entire instruction
+        // has been executed..
         while(backplane.sync().value() == false) {
           clock.value(true);
           clock.value(false);
         }
-        out.println("Paused.");
+        out.println(cpu.stopped() ? "Stopped." : "Paused.");
         out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
       }
       catch (Exception e) {
