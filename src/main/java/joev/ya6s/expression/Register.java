@@ -18,19 +18,19 @@ public class Register implements Function<W65C02, Integer> {
   private static final Integer one  = Integer.valueOf(1);
 
   /** The PC register. */
-  public static final Register PC = new Register("PC", cpu -> Integer.valueOf(cpu.pc()));
+  public static final Register PC = new Register("PC", cpu -> Integer.valueOf(cpu.pc() & 0xFFFF));
 
   /** The A register. */
-  public static final Register A  = new Register("A",  cpu -> Integer.valueOf(cpu.a()));
+  public static final Register A  = new Register("A",  cpu -> Integer.valueOf(cpu.a() & 0xFF));
 
   /** The X register. */
-  public static final Register X  = new Register("X",  cpu -> Integer.valueOf(cpu.x()));
+  public static final Register X  = new Register("X",  cpu -> Integer.valueOf(cpu.x() & 0xFF));
 
   /** The Y register. */
-  public static final Register Y  = new Register("Y",  cpu -> Integer.valueOf(cpu.y()));
+  public static final Register Y  = new Register("Y",  cpu -> Integer.valueOf(cpu.y() & 0xFF));
 
   /** The stack register. */
-  public static final Register S  = new Register("S",  cpu -> Integer.valueOf(cpu.s()));
+  public static final Register S  = new Register("S",  cpu -> Integer.valueOf(cpu.s() & 0xFF));
 
   /** The carry flag. */
   public static final Register C  = new Register("C",  cpu -> (cpu.p() & CARRY) == 0 ? zero : one);

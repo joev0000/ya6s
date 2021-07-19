@@ -24,12 +24,11 @@ public class NoopCommand implements Command {
   /**
    * Do nothing.
    *
-   * @param backplane ignored.
-   * @param cpu ignored.
+   * @param monitor ignored.
    * @return null
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
     return null;
   }
 

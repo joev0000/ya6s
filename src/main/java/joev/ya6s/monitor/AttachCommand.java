@@ -4,7 +4,6 @@ import java.lang.reflect.Constructor;
 import java.util.Map;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02;
 
 /**
  * Command to attach a device to a Backplane
@@ -28,16 +27,15 @@ public class AttachCommand implements Command {
   /**
    * Create a new instance of the device.
    *
-   * @param backplane the Backplane to attach the device.
-   * @param cpu the CPU.  Unused.
+   * @param monitor the Monitor which will execute this command.
    * @return a suggested next Command.  Null.
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
     try {
       Class<?> cls = Class.forName(typeName);
       Constructor<?> ctor = cls.getConstructor(Backplane.class, Map.class);
-      ctor.newInstance(backplane, options);
+      ctor.newInstance(monitor.backplane(), options);
     }
     catch(Exception e) {
       System.out.format("error: %s: %s%n", e.getClass().getName(), e.getMessage());

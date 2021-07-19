@@ -27,12 +27,13 @@ public class ContinueCommand implements Command {
   /**
    * Execute the command; run until the CPU is stopped.
    *
-   * @param backplane the Backplane of the system to run
-   * @param cpu the CPU of the system to run.
+   * @param monitor the Monitor which will execute this command.
    * @return the next suggested Command, or null.
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
+    Backplane backplane = monitor.backplane();
+    W65C02 cpu = monitor.cpu();
     Signal clock = backplane.clock();
     short oldPC = 0;
     while(!cpu.stopped()) { // or hit a breakpoint

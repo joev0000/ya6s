@@ -10,6 +10,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import joev.ya6s.W65C02;
+import joev.ya6s.expression.Constant;
+import joev.ya6s.expression.Register;
+import joev.ya6s.expression.RelationalExpression;
 
 public class MonitorParser {
 }
@@ -26,6 +33,7 @@ TOKEN [IGNORE_CASE]: {
   <STEP:  "s" | "step"> |
   <LOAD:  "l" | "load"> |
   <ATTACH: "a" | "attach">: S_ATTACH |
+  <BREAK: "b" | "break">: S_BREAK |
   <RESET:       "reset">
 }
 
@@ -267,6 +275,20 @@ TOKEN: {
   <#STRING: (~[" ","\t","="])+>
 }
 
+<S_BREAK> SKIP: { " " | "\t" }
+
+<S_BREAK> TOKEN [IGNORE_CASE]: {
+  <REGISTER: "PC" | "A" | "X" | "Y" | "S" | "C" | "Z" | "N" | "V" | "I" | "D"> |
+  <RELATIVE_OP: "!=" | "<=" | ">=" | ">" | "<" | "="> |
+  <LOGIC_OP: "OR" | "XOR" | "AND"> |
+  <CONSTANT: (["0"-"9","A"-"F"])+> |
+  <INDEX: (["0"-"9"])+> |
+  <AT: "AT"> |
+  <WHEN: "WHEN"> |
+  <LIST: "LIST"> |
+  <REMOVE: "REMOVE">
+}
+
 Command command(): { Command c = null; }
 {
   (
@@ -278,6 +300,10 @@ Command command(): { Command c = null; }
     c = load() |
     c = attach() |
     c = reset() |
+    LOOKAHEAD(2) c = breakWhen() |
+    LOOKAHEAD(2) c = breakAt() |
+    LOOKAHEAD(2) c = breakList() |
+    LOOKAHEAD(2) c = breakRemove() |
     <EOF>
   ) {return c == null? NoopCommand.instance() : c;}
 }
@@ -361,5 +387,95 @@ Command attach(): {
   <EOF>
   {
     return new AttachCommand(qtn.image, options);
+  }
+}
+
+Constant breakpointConstant(): {
+  Token c;
+}
+{
+  c=<CONSTANT> {
+    return new Constant(Integer.parseInt(c.image, 16));
+  }
+}
+
+Register breakpointRegister(): {
+  Token c;
+  Register r;
+}
+{
+  c=<REGISTER> {
+    switch(c.image.toUpperCase()) {
+      case "PC": r = Register.PC; break;
+      case "A":  r = Register.A;  break;
+      case "X":  r = Register.X;  break;
+      case "Y":  r = Register.Y;  break;
+      case "C":  r = Register.C;  break;
+      case "N":  r = Register.N;  break;
+      case "Z":  r = Register.Z;  break;
+      case "V":  r = Register.V;  break;
+      case "I":  r = Register.I;  break;
+      case "D":  r = Register.D;  break;
+      default:   r = null;
+    }
+    return r;
+  }
+}
+
+RelationalExpression relationalExpr(): {
+  Function<W65C02, Integer> a;
+  Function<W65C02, Integer> b;
+  Token opToken;
+}
+{
+  (a=breakpointConstant() | a=breakpointRegister())
+  opToken=<RELATIVE_OP>
+  (b=breakpointConstant() | b=breakpointRegister()) {
+    RelationalExpression.Op op;
+    switch(opToken.image) {
+      case "=":  op = RelationalExpression.Op.EQUALS; break;
+      case ">":  op = RelationalExpression.Op.GREATER_THAN; break;
+      case "<":  op = RelationalExpression.Op.GREATER_THAN; break;
+      case "!=": op = RelationalExpression.Op.NOT_EQUALS; break;
+      case ">=": op = RelationalExpression.Op.GREATER_THAN_OR_EQUALS; break;
+      case "<=": op = RelationalExpression.Op.LESS_THAN_OR_EQUALS; break;
+      default:   op = null;
+    }
+
+    return new RelationalExpression(op, a, b);
+  }
+}
+
+
+Command breakWhen(): {
+  Predicate<W65C02> e;
+}
+{
+  <BREAK> <WHEN> e=relationalExpr() <EOF> { return new BreakpointWhenCommand(e); }
+}
+
+Command breakAt(): {
+  Token e;
+}
+{
+  <BREAK> <AT> e=<CONSTANT> <EOF> {
+    return new BreakpointWhenCommand(
+      new RelationalExpression(
+        RelationalExpression.Op.EQUALS, Register.PC, new Constant(Integer.parseInt(e.image, 16))
+      )); }
+}
+
+Command breakList(): {
+}
+{
+  <BREAK> <LIST> <EOF> { return BreakpointListCommand.instance(); }
+}
+
+Command breakRemove(): {
+  Token e;
+}
+{
+  <BREAK> <REMOVE> e=<CONSTANT> <EOF> {
+    return new BreakpointRemoveCommand(Integer.parseInt(e.image, 10));
   }
 }

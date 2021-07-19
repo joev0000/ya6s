@@ -61,12 +61,14 @@ public class ReadCommand implements Command {
   /**
    * Execute the read command.
    *
-   * @param backplane the backplane to pull data from.
-   * @param cpu the CPU to unready while the data is being read.
+   * @param monitor the Monitor which this command will execute against.
    * @return a suggested next Command.
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
+    Backplane backplane = monitor.backplane();
+    W65C02 cpu = monitor.cpu();
+
     Signal rdy = cpu.rdy();
     Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();

@@ -13,7 +13,7 @@ public class RelationalExpression implements Predicate<W65C02> {
   /**
    * An enumeration that contains the relational operations.
    */
-  enum Op {
+  public enum Op {
     EQUALS                 ("=",  (a, b) -> a.equals(b)),
     NOT_EQUALS             ("!=", (a, b) -> !a.equals(b)),
     GREATER_THAN           (">",  (a, b) -> a > b),

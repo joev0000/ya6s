@@ -25,12 +25,14 @@ public class WriteCommand implements Command {
   /**
    * Load the data into the Backplane.
    *
-   * @param backplane the Backplane to load the data into.
-   * @param cpu the CPU to unready while the data is being loaded.
+   * @param monitor the Monitor to execute this command against.
    * @return a suggested next Command
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
+    Backplane backplane = monitor.backplane();
+    W65C02 cpu = monitor.cpu();
+
     Signal rdy = cpu.rdy();
     Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();

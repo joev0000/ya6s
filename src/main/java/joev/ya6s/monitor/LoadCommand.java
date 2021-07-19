@@ -30,12 +30,13 @@ public class LoadCommand implements Command {
   /**
    * Load the file contents into memory.
    *
-   * @param backplane the Backplane that holds the destination of the data.
-   * @param cpu the CPU to unready while the load is ongoing.
+   * @param monitor the Monitor which will execute this command.
    * @return a suggested next Command.  Null.
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
+    Backplane backplane = monitor.backplane();
+    W65C02 cpu = monitor.cpu();
     Signal rdy = cpu.rdy();
     Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();

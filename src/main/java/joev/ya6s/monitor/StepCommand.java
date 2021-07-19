@@ -25,12 +25,14 @@ public class StepCommand implements Command {
   /**
    * Run a single step of the program.
    *
-   * @param backplane the Backplane of the system.
-   * @param cpu the CPU of the system.
+   * @param monitor the Monitor to run this command against.
    * @return a suggested next Command.
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
+    Backplane backplane = monitor.backplane();
+    W65C02 cpu = monitor.cpu();
+
     Signal sync = backplane.sync();
     Signal clock = backplane.clock();
     boolean synced = false;

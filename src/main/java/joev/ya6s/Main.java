@@ -24,6 +24,7 @@ public class Main {
     final Signal resb = cpu.resb();
     resb.value(true);
 
+    Monitor monitor = new Monitor(backplane, cpu, System.in, System.out, toUartIn);
     if(args.length > 0) {
       Files.lines(Path.of(args[0]))
         .map(l -> l.trim())
@@ -32,14 +33,13 @@ public class Main {
           try {
             MonitorParser parser = new MonitorParser(new StringReader(l));
             Command command = parser.command();
-            command.execute(backplane, cpu);
+            command.execute(monitor);
           }
           catch (ParseException pe) {
             System.err.format("Error parsing \"%s\": %s%n", l, pe.getMessage());
           }
         });
     }
-    Monitor monitor = new Monitor(backplane, cpu, System.in, System.out, toUartIn);
     monitor.run();
   }
 }

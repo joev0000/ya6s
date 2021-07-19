@@ -8,6 +8,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * A monitor for a system with a CPU and Backplane.
@@ -19,6 +22,7 @@ public class Monitor {
   private final Smartline sl;
   private final PrintStream out;
   private final OutputStream console;
+  private final List<Predicate<W65C02>> breakpoints = new ArrayList<>();
 
   public static InputStream ttyIn;
   public static OutputStream ttyOut;
@@ -39,6 +43,52 @@ public class Monitor {
   }
 
   /**
+   * Add a breakpoint, which is a Predicate tested against a CPU.
+   *
+   * @param predicate the Predicate to test.
+   */
+  public void addBreakpoint(Predicate<W65C02> predicate) {
+    System.out.format("Adding breakpoint: %s%n", predicate);
+    breakpoints.add(predicate);
+  }
+
+  /**
+   * List the breakpoints.
+   *
+   * @return the list of breakpoints.
+   */
+  public List<Predicate<W65C02>> listBreakpoints() {
+    return breakpoints;
+  }
+
+  /**
+   * Remove a breakpoint.
+   *
+   * @param index the index within the list of breakpoints to remove.
+   */
+  public void removeBreakpoint(int index) {
+    breakpoints.remove(index);
+  }
+
+  /**
+   * Get the CPU this monitor is monitoring.
+   *
+   * @return the CPU.
+   */
+  public W65C02 cpu() {
+    return cpu;
+  }
+
+  /**
+   * Get the Backplane this monitor is monitoring.
+   *
+   * @return the Backplane.
+   */
+  public Backplane backplane() {
+    return backplane;
+  }
+
+  /**
    * Run the monitor loop.  Never exits.
    */
   public void run() {
@@ -54,18 +104,31 @@ public class Monitor {
 
         // Run commands one at a time until a Continue command is parsed.
         while(!command.equals(ContinueCommand.instance())) {
-          command.execute(backplane, cpu);
+          command.execute(this);
           string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));
           command = parser.command();
         }
 
+        Predicate<W65C02> breakpoint = null;
         // At this point, the Continue command was used.
         out.println("(Ctrl-E to pause.)");
 
         // Cycle the clock until either the CPU is stopped, or if ^E is
         // entered in the console.
         while(!cpu.stopped() && (c = sl.read()) != 0x05) { // ^E
+          // if sync, check breakpoint
+          if(backplane.sync().value()) {
+            for(Predicate<W65C02> predicate: breakpoints) {
+              if(predicate.test(cpu)) {
+                breakpoint = predicate;
+                break;
+              }
+            }
+          }
+          if(breakpoint != null) {
+            break;
+          }
           if(c >= 0) console.write(c);
           clock.value(true);
           clock.value(false);
@@ -78,7 +141,12 @@ public class Monitor {
           clock.value(true);
           clock.value(false);
         }
-        out.println(cpu.stopped() ? "Stopped." : "Paused.");
+        if(breakpoint != null) {
+          out.format("Breakpoint: %s%n", breakpoint);
+        }
+        else {
+          out.println(cpu.stopped() ? "Stopped." : "Paused.");
+        }
         out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
       }
       catch (Exception e) {

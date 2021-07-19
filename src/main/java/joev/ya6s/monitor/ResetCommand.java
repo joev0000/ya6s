@@ -25,12 +25,14 @@ public class ResetCommand implements Command {
   /**
    * Assert the reset signal on the CPU.
    *
-   * @param backplane the backplace for synchronization.
-   * @param cpu the CPU to assert reset upon.
+   * @param monitor the Monitor to execute this command against.
    * @return a suggeted next Command.  Null.
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
+    Backplane backplane = monitor.backplane();
+    W65C02 cpu = monitor.cpu();
+
     cpu.resb().value(false);
     Signal clock = backplane.clock();
     while(!backplane.sync().value()) {

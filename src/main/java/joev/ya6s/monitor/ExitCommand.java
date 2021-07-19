@@ -26,12 +26,11 @@ public class ExitCommand implements Command {
   /**
    * Exits from the monitor.
    *
-   * @param backplane ignored
-   * @param cpu ignored
+   * @param monitor ignored
    * @return nothing, since this uses System.exit(int)
    */
   @Override
-  public Command execute(Backplane backplane, W65C02 cpu) {
+  public Command execute(Monitor monitor) {
     System.exit(0);
     return null;
   }
