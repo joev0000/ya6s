@@ -65,21 +65,25 @@ public class Signal {
    * @param value the new value of the Signal.
    */
   public void value(boolean value) {
+    boolean oldValue = this.value;
+    this.value = value;
+    edgeNotify(oldValue, value);
+  }
+
+  protected void edgeNotify(boolean oldValue, boolean newValue) {
     EventType eventType = null;
-    if(!this.value && value) {
+    if(!oldValue && newValue) {
       eventType = EventType.POSITIVE_EDGE;
     }
-    else if(this.value && !value) {
+    else if(oldValue && !newValue) {
       eventType = EventType.NEGATIVE_EDGE;
     }
-    this.value = value;
     if(eventType != null) {
       for(Listener listener: listeners) {
         listener.event(eventType);
       }
     }
   }
-
   /**
    * Register a Listener.
    *
