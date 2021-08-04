@@ -40,4 +40,10 @@ public class OpenCollectorTest {
 
     assertFalse(oc.value());
   }
+
+  @Test
+  void noInputsIsTrue() {
+    OpenCollector oc = new OpenCollector("test");
+    assertTrue(oc.value());
+  }
 }

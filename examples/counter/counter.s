@@ -27,7 +27,7 @@ START:  LDA     C_CTRL          ; A = Counter control
         STA     C_HI            ; Store them in counter high
 
         LDA     C_CTRL          ; A = Counter control
-        ORA     #$01            ; set counter enable bit
+        ORA     #$05            ; set counter enable and interrupt enable bits
         STA     C_CTRL          ; Store counter control
 
 LOOP:   BIT     C_CTRL          ; Check the counter control bits
@@ -36,7 +36,11 @@ LOOP:   BIT     C_CTRL          ; Check the counter control bits
         STP                     ; Halt
 
 NMI:
-IRQ:    RTI
+IRQ:    LDA     C_CTRL          ; A = Counter control
+        AND     #$FA            ; Clear counter and interrupt enable bits
+        STA     C_CTRL          ; Store counter control
+        LDX     #$42            ; X = $42
+        RTI
 
         .SEGMENT "VECTOR"
 V_NMI:  .WORD   NMI

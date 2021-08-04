@@ -104,10 +104,8 @@ public class Counter {
     if (counter == 0) {
       control |= ZERO;
       control &= ~COUNTER_ENABLE;
-      if ((control & INTERRUPT_ENABLE) != 0) {
-        // backplane.irq().value(true);
-      }
     }
+    backplane.irqb().value(this, !(counter == 0 && ((control & INTERRUPT_ENABLE) != 0)));
     if ((short) (address.value() & addressMask) != baseAddress) {
       return;
     }

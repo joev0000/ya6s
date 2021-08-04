@@ -1,6 +1,7 @@
 package joev.ya6s;
 
 import joev.ya6s.signals.Bus;
+import joev.ya6s.signals.OpenCollector;
 import joev.ya6s.signals.Signal;
 
 /**
@@ -12,6 +13,7 @@ public class Backplane {
   private final Signal rwb;
   private final Signal sync;
   private final Signal clock;
+  private final OpenCollector irqb;
 
   /**
    * Create a new Backplane
@@ -22,6 +24,7 @@ public class Backplane {
     rwb = new Signal("rwb");
     sync = new Signal("sync");
     clock = new Signal("clock");
+    irqb = new OpenCollector("irqb");
   }
 
   /**
@@ -58,5 +61,12 @@ public class Backplane {
    * @return the clock signal.
    */
   public Signal clock() { return clock; }
+
+  /**
+   * Get the irqb open collector signal.
+   *
+   * @return the irqb signal.
+   */
+  public OpenCollector irqb() { return irqb; }
 }
 

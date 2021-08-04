@@ -4,6 +4,7 @@ import static joev.ya6s.W65C02.HalfStep.*;
 import static joev.ya6s.W65C02.Instruction.*;
 
 import joev.ya6s.signals.Bus;
+import joev.ya6s.signals.OpenCollector;
 import joev.ya6s.signals.Signal;
 
 /**
@@ -470,6 +471,7 @@ public class W65C02 {
   private boolean stopped = false;
   private boolean waiting = false;
   private boolean resetting = false;
+  private boolean interrupted = false;
 
   private final Signal phi2;
   private final Bus address;
@@ -478,6 +480,7 @@ public class W65C02 {
   private final Signal sync;
   private final Signal resb;
   private final Signal rdy;
+  private final OpenCollector irqb;
 
   private Signal.Listener tickFn = this::tick;
 
@@ -487,6 +490,7 @@ public class W65C02 {
     data = backplane.data();
     rwb = backplane.rwb();
     sync = backplane.sync();
+    irqb = backplane.irqb();
     resb = new Signal("resb");
     rdy = new Signal("rdy");
     rdy.value(true);
@@ -547,6 +551,12 @@ public class W65C02 {
         opcode = (byte)0xEA;
         sync.value(false);
         //System.out.format("tick%d: RESETTING: halfstep: %d (%s)%n", half, halfstep, hs);
+      }
+      else if(interrupted) {
+        hs = HS_IRQ_BRK[halfstep];
+        opcode = (byte)0xEA;
+        sync.value(false);
+        //System.out.format("tick%d: INTERRUPTED: halfstep: %d (%s)%n", half, halfstep, hs);
       }
       else {
         hs = halfsteps[opcode & 0xFF][halfstep];
@@ -693,6 +703,7 @@ public class W65C02 {
           rwb.value(true);
           sync.value(true);
           resetting = !resb.value();
+          interrupted = ((p & INTERRUPT_DISABLE) == 0) && !irqb.value();
           halfstep = -1; // will be incremented to 0 at end of loop.
           break;
         case R_PC_INC_SYNC:
@@ -809,6 +820,7 @@ public class W65C02 {
           rwb.value(true);
           sync.value(true);
           resetting = !resb.value();
+          interrupted = ((p & INTERRUPT_DISABLE) == 0) && !irqb.value();
           halfstep = -1; // will be incremented to 0 at end of loop.
           break;
         case R_PC_INC_SYNC_COND:
@@ -828,6 +840,7 @@ public class W65C02 {
             rwb.value(true);
             sync.value(true);
             resetting = !resb.value();
+            interrupted = ((p & INTERRUPT_DISABLE) == 0) && !irqb.value();
             halfstep = -1; // will be incremented to 0 at end of loop.
           }
           break;
