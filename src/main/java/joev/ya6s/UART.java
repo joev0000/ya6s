@@ -12,6 +12,18 @@ import java.util.Map;
 /**
  * Module that simulates a 16550D-based UART.
  *
+ * Divisor values for common baud rates:
+ *
+ *   Baud   DLL DLM
+ *    110   $E9 $28
+ *    300   $00 $0F
+ *   1200   $98 $03
+ *   2400   $E0 $01
+ *   9600   $78 $00
+ *  19200   $3C $00
+ *  56000   $15 $00
+ * 128000   $09 $00
+ *
  * Sample program to echo bytes at 9600 baud with a UART at $F000:
  * <code>
  *         LDA #$83    ; A = Set Divisor Latch Access Bit, 8-N-1
@@ -33,6 +45,7 @@ import java.util.Map;
  *         BRA LOOP    ; Read the next byte
  *
  * ; A9 83 8D 03 F0 A9 78 8D 00 F0 9C 01 F0 A9 03 8D 03 F0 A9 01 2C 05 F0 F0 FB AE 00 F0 A9 20 2C 05 F0 F0 FB 8E 00 F0 80 EA
+ *
  * </code>
  */
 public class UART {
@@ -215,6 +228,10 @@ public class UART {
             xmitTail = 0;
           }
         }
+        if(xmitHead == xmitTail) {
+          // Set the Transmitter Holding Register Empty flag.
+          LSR |= THRE;
+        }
       }
     }
   }
@@ -341,6 +358,7 @@ public class UART {
     LSR &= ~THRE;
     synchronized(xmitFifo) {
       if(((xmitHead + 1) % xmitFifo.length) == xmitTail) {
+        System.out.format("xmit: Overflow.  THR = %02X%n", THR);
         // TODO: handle overflow
       }
       else {
@@ -351,8 +369,6 @@ public class UART {
         // Clear the Transmitter Empty flag.
         LSR &= ~TEMT;
       }
-      // Set the Transmitter Holding Register Empty flag.
-      LSR |= THRE;
       xmitFifo.notify();
     }
   }
