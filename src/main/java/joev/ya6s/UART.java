@@ -198,8 +198,9 @@ public class UART {
       synchronized(xmitFifo) {
         // Block if there's nothing to write.
         if(xmitHead == xmitTail) {
-          // Set the Transmitter Empty Flag
-          LSR |= TEMT;
+          // Set the Transmitter Empty and
+          // Trasmitter Holding Register Empty Flag
+          LSR |= (TEMT | THRE);
           try {
             xmitFifo.wait();
           }
