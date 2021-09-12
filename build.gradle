@@ -27,6 +27,7 @@ dependencies {
 
 compileJava {
   options.compilerArgs += [
+    '-g',
     '-Xlint:all',
     '-Xlint:-requires-automatic',
     '-Xlint:-requires-transitive-automatic',
