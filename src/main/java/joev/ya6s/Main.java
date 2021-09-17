@@ -42,4 +42,11 @@ public class Main {
     }
     monitor.run();
   }
+
+  /**
+   * This clas cannot be instantiated.
+   */
+  private Main() {
+    // private default constructor
+  }
 }
