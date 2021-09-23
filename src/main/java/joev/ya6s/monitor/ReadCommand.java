@@ -78,7 +78,8 @@ public class ReadCommand implements Command {
     short alignedStart = (short)(start & 0xFFF0);
     short alignedEnd = (short)(end | 0x000F);
 
-
+    int oldAddress = address.value();
+    int oldData = data.value();
     boolean oldRdy = rdy.value();
     rdy.value(false);
     System.out.println("       0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F   01234567 89ABCDEF");
@@ -110,6 +111,11 @@ public class ReadCommand implements Command {
       }
       System.out.println("|");
     }
+    // Restore the original address and data bus values.
+    address.value(oldAddress);
+    data.value(oldData);
+    clock.value(false);
+    clock.value(true);
     rdy.value(oldRdy);
     return null;
   }
