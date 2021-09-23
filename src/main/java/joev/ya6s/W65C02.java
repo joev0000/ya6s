@@ -109,7 +109,7 @@ public class W65C02 {
     D_AAL, D_AAH,
     D_PCL, D_PCH,
     D_P, D_REG,
-    PCH_D, PCL_D, P_D, REG_D,
+    PCH_D, PCL_D, P_D, P_D_BRK, REG_D,
     R_S, R_S_DEC, R_S_INC, R_S_PC_INC,
     W_S, W_S_DEC,
     RW_AD_REG, RW_AD_X_REG, RW_AD_Y_REG,
@@ -293,8 +293,17 @@ public class W65C02 {
     NOOP,     R_PC,
     NOOP,     R_PC_SYNC
   };
-  private static final HalfStep[] HS_IRQ_BRK = new HalfStep[] {
+  private static final HalfStep[] HS_BRK = new HalfStep[] {
     D_OPCODE, R_PC_INC_INC,
+    PCH_D,    W_S_DEC,
+    PCL_D,    W_S_DEC,
+    P_D_BRK,  W_S_DEC,
+    NOOP,     R_FFFE,
+    D_PCL,    R_FFFF,
+    D_PCH,    R_PC_SYNC
+  };
+  private static final HalfStep[] HS_IRQ = new HalfStep[] {
+    D_OPCODE, R_PC_INC,
     PCH_D,    W_S_DEC,
     PCL_D,    W_S_DEC,
     P_D,      W_S_DEC,
@@ -398,7 +407,7 @@ public class W65C02 {
         case IMPLIED:
           switch(instructions[opcode]) {
             case STP: halfsteps[opcode] = HS_STOP; break;
-            case BRK: halfsteps[opcode] = HS_IRQ_BRK; break;
+            case BRK: halfsteps[opcode] = HS_BRK; break;
             case RTS: halfsteps[opcode] = HS_IMPLIED_RTS; break;
             case RTI: halfsteps[opcode] = HS_IMPLIED_RTI; break;
             case PHA, PHX, PHY, PHP:
@@ -553,7 +562,7 @@ public class W65C02 {
         //System.out.format("tick%d: RESETTING: halfstep: %d (%s)%n", half, halfstep, hs);
       }
       else if(interrupted) {
-        hs = HS_IRQ_BRK[halfstep];
+        hs = HS_IRQ[halfstep];
         opcode = (byte)0xEA;
         sync.value(false);
         //System.out.format("tick%d: INTERRUPTED: halfstep: %d (%s)%n", half, halfstep, hs);
@@ -594,7 +603,8 @@ public class W65C02 {
           break;
         case PCH_D: data.value((byte)((pc >> 8) & 0xFF)); break;
         case PCL_D: data.value((byte)(pc & 0xFF)); break;
-        case P_D:   data.value(p | BREAK); break;
+        case P_D:   data.value(p); break;
+        case P_D_BRK: data.value(p | BREAK); break;
         case REG_D:
           switch(instructions[opcode & 0xFF]) {
             case PHA: data.value(a); break;
