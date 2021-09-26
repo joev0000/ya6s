@@ -35,10 +35,11 @@ public class ResetCommand implements Command {
 
     cpu.resb().value(false);
     Signal clock = backplane.clock();
-    while(!backplane.sync().value()) {
-      clock.value(true);
-      clock.value(false);
-    }
+
+    // One cycle to kick the CPU into reset mode.
+    clock.value(true);
+    clock.value(false);
+
     cpu.resb().value(true);
     return null;
   }
