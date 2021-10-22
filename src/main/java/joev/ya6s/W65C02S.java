@@ -311,7 +311,7 @@ public class W65C02S {
     RESET((short)0xFFFC),
     IRQ((short)0xFFFE);
 
-    private short vector;
+    private final short vector;
     InterruptMode(short vector) {
       this.vector = vector;
     }
@@ -342,7 +342,6 @@ public class W65C02S {
   private Register readRegister = NULL;
   private InterruptMode interruptMode = InterruptMode.NONE;
 
-  private AddressingMode mode = IMPLIED;
   private Cycle[] cycles = IMPLIED.cycles();
   private int cycle;
   private boolean stopped = false;
@@ -518,15 +517,15 @@ public class W65C02S {
         case DATA:
           if(addressingModes[op & 0xFF] == RELATIVE) {
             switch(instructions[op & 0xFF]) {
-              case BPL: if((p & NEGATIVE) == 0) { pc += (short)data; extraCycles++; } break;
-              case BMI: if((p & NEGATIVE) != 0) { pc += (short)data; extraCycles++; } break;
-              case BVC: if((p & OVERFLOW) == 0) { pc += (short)data; extraCycles++; } break;
-              case BVS: if((p & OVERFLOW) != 0) { pc += (short)data; extraCycles++; } break;
-              case BCC: if((p & CARRY)    == 0) { pc += (short)data; extraCycles++; } break;
-              case BCS: if((p & CARRY)    != 0) { pc += (short)data; extraCycles++; } break;
-              case BNE: if((p & ZERO)     == 0) { pc += (short)data; extraCycles++; } break;
-              case BEQ: if((p & ZERO)     != 0) { pc += (short)data; extraCycles++; } break;
-              case BRA:                         { pc += (short)data; extraCycles++; } break;
+              case BPL: if((p & NEGATIVE) == 0) { pc += data; extraCycles++; } break;
+              case BMI: if((p & NEGATIVE) != 0) { pc += data; extraCycles++; } break;
+              case BVC: if((p & OVERFLOW) == 0) { pc += data; extraCycles++; } break;
+              case BVS: if((p & OVERFLOW) != 0) { pc += data; extraCycles++; } break;
+              case BCC: if((p & CARRY)    == 0) { pc += data; extraCycles++; } break;
+              case BCS: if((p & CARRY)    != 0) { pc += data; extraCycles++; } break;
+              case BNE: if((p & ZERO)     == 0) { pc += data; extraCycles++; } break;
+              case BEQ: if((p & ZERO)     != 0) { pc += data; extraCycles++; } break;
+              case BRA:                         { pc += data; extraCycles++; } break;
               default:
             }
           }
@@ -621,18 +620,16 @@ public class W65C02S {
             }
             setNZ(a);
             break;
-          case BBS: if(branch) pc+=data; break;
-          case BBR: if(branch) pc+=data; break;
+          case BBS:
+          case BBR:
+            if(branch) pc+=data; break;
           default:
         }
       }
       else if(cycle == 1) {
         // previous cycle was an opcode read, make sure we have
         // the right cycles for the rest of the instruction.
-        cycles = switch(interruptMode) {
-          case RESET -> AddressingMode.STACK_RES.cycles();
-          default -> addressingModes[op & 0xFF].cycles();
-        };
+        cycles = interruptMode == InterruptMode.RESET ? STACK_RES.cycles() : addressingModes[op & 0xFF].cycles();
        //System.out.format("tick: PC: %04X op: %s, A: %02X, X: %02X, Y: %02X, S: %02X, P: %02X (%s)%n", (short)(pc-1), instructions[op & 0xFF], a, x, y, s, p, status());
       }
 
@@ -674,14 +671,18 @@ public class W65C02S {
       else {
         readRegister = NULL;
         if(c.data() == DATA) {
-          switch(instructions[op & 0xFF]) {
-            case STA: case PHA: data = a; break;
-            case STX: case PHX: data = x; break;
-            case STY: case PHY: data = y; break;
-            case STZ: data = 0; break;
-            case PHP: data = (byte)(p | BREAK); break;
-            case BRK: data = (byte)(p | BREAK); p &= ~DECIMAL; break;
-            default:
+          switch (instructions[op & 0xFF]) {
+            case STA, PHA -> data = a;
+            case STX, PHX -> data = x;
+            case STY, PHY -> data = y;
+            case STZ -> data = 0;
+            case PHP -> data = (byte) (p | BREAK);
+            case BRK -> {
+              data = (byte) (p | BREAK);
+              p &= ~DECIMAL;
+            }
+            default -> {
+            }
           }
         }
         if(be.value()) {
@@ -706,14 +707,6 @@ public class W65C02S {
           p |= INTERRUPT_DISABLE;
         }
       }
-    }
-    else { // eventType == Signal.EventType.POSITIVE_EDGE
-      /*
-      cycle++;
-      if(cycle == cycles.length) {
-        cycle = 0;
-      }
-      */
     }
   }
 }

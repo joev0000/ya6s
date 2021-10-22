@@ -8,7 +8,7 @@ import joev.ya6s.W65C02S;
  * Command to set a conditional breakpoint.
  */
 public class BreakpointWhenCommand implements Command {
-  private Predicate<W65C02S> predicate;
+  private final Predicate<W65C02S> predicate;
 
   /**
    * Create a new breakpoint from the Predicate.

@@ -94,7 +94,7 @@ public class Monitor {
   public void run() {
     MonitorParser parser;
     Signal clock = backplane.clock();
-    Command command = null;
+    Command command;
     int c;
     while(true) {
       try {
@@ -136,8 +136,8 @@ public class Monitor {
 
         // The processor is either stopped or paused. Cycle the clock
         // until the next SYNC pulse- to make sure the entire instruction
-        // has been executed..
-        while(backplane.sync().value() == false) {
+        // has been executed.
+        while(!backplane.sync().value()) {
           clock.value(true);
           clock.value(false);
         }

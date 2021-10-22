@@ -82,7 +82,7 @@ public class RelationalExpression implements Predicate<W65C02S> {
   /**
    * A String of the form "a op b"
    *
-   * @return a human readable representation of the expression.
+   * @return a human-readable representation of the expression.
    */
   @Override
   public String toString() {

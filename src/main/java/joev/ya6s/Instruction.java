@@ -1,6 +1,9 @@
 package joev.ya6s;
 
-public  enum Instruction {
+/**
+ * An enumeration of all instructions.
+ */
+public enum Instruction {
   // Illegal instruction
   XXX,
 
@@ -16,7 +19,7 @@ public  enum Instruction {
   JMP, JSR,
   PHA, PHP, PLA, PLP,
   RTI, RTS,
-  TAX, TAY, TSA, TSX, TXA, TXS, TYA,
+  TAX, TAY, TSX, TXA, TXS, TYA,
 
   // Rockwell 65C02 instructions (implemented by WDC)
   RMB, SMB, BBR, BBS,

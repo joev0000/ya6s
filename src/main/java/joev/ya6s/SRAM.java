@@ -77,34 +77,20 @@ public class SRAM {
    */
   private void tick(Signal.EventType eventType) {
     if(eventType == Signal.EventType.POSITIVE_EDGE) {
-      short busAddr = (short)address.value();
-      if((short)(busAddr & mask) == maskedAddress) {
+      short busAddress = (short)address.value();
+      if((short)(busAddress & mask) == maskedAddress) {
         if(rwb.value()) {
-          data.value(memory[busAddr & 0xFFFF]);
-          /*
-          if((busAddr & 0xFF00) == 0x0000 ||
-             (busAddr & 0xFF00) == 0x0100 || 
-             (busAddr & 0xFF00) == 0x0200) {
-            System.out.format("SRAM: load  %04X: %02X%n", busAddr, data.value());
-          }
-          */
+          data.value(memory[busAddress & 0xFFFF]);
         }
         else {
-          memory[busAddr & 0xFFFF] = (byte)data.value();
-          /*
-          if((busAddr & 0xFF00) == 0x0000 ||
-             (busAddr & 0xFF00) == 0x0100 || 
-             (busAddr & 0xFF00) == 0x0200) {
-            System.out.format("SRAM: store %04X: %02X%n", busAddr, data.value());
-          }
-          */
+          memory[busAddress & 0xFFFF] = (byte)data.value();
         }
       }
     }
   }
 
   /**
-   * Deregister from the clock Signal.
+   * Unregister from the clock Signal.
    */
   public void close() {
     clock.unregister(tickFn);

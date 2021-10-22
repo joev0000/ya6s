@@ -1,8 +1,5 @@
 package joev.ya6s.monitor;
 
-import joev.ya6s.Backplane;
-import joev.ya6s.W65C02S;
-
 /**
  * Command used to exit the monitor.
  */
@@ -36,7 +33,7 @@ public class ExitCommand implements Command {
   }
 
   /**
-   * Return an human-friendly representation of this command.
+   * Return a human-friendly representation of this command.
    *
    * @return "exit"
    */

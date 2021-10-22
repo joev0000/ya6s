@@ -9,13 +9,13 @@ import joev.ya6s.Backplane;
  * Command to attach a device to a Backplane
  */
 public class AttachCommand implements Command {
-  private String typeName;
-  private Map<String, String> options;
+  private final String typeName;
+  private final Map<String, String> options;
 
   /**
    * Create an attach command with the given type and options.
    *
-   * @param typeName a Java class name that has a constuctor that takes
+   * @param typeName a Java class name that has a constructor that takes
    *   an argument list of (Backplane, Map&lt;String, String&gt;)
    * @param options the options to pass into the newly created device.
    */
@@ -34,8 +34,8 @@ public class AttachCommand implements Command {
   public Command execute(Monitor monitor) {
     try {
       Class<?> cls = Class.forName(typeName);
-      Constructor<?> ctor = cls.getConstructor(Backplane.class, Map.class);
-      ctor.newInstance(monitor.backplane(), options);
+      Constructor<?> constructor = cls.getConstructor(Backplane.class, Map.class);
+      constructor.newInstance(monitor.backplane(), options);
     }
     catch(Exception e) {
       System.out.format("error: %s: %s%n", e.getClass().getName(), e.getMessage());

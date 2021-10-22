@@ -27,7 +27,7 @@ public class Signal {
      *
      * @param type the type of the event
      */
-    public void event(EventType type);
+    void event(EventType type);
   }
 
   private final String name;
@@ -105,7 +105,7 @@ public class Signal {
   /**
    * Get a human-readable String representation of the Signal.
    *
-   * @return a human-readable represenation of the Signal.
+   * @return a human-readable representation of the Signal.
    */
   @Override
   public String toString() {

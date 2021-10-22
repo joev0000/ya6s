@@ -52,7 +52,6 @@ import joev.ya6s.signals.Signal;
  * </code>
  */
 public class Counter {
-  private final short addressMask = ~0x3;
   private final Backplane backplane;
   private final short baseAddress;
   private final Signal.Listener tickFn;
@@ -71,7 +70,7 @@ public class Counter {
   /**
    * Create a new 24-bit counter device.
    *
-   * @param backplane the backlplane to attach.
+   * @param backplane the backplane to attach.
    * @param options the options for the counter. "base" is the base address.
    */
   public Counter(Backplane backplane, Map<String, String> options) {
@@ -106,6 +105,7 @@ public class Counter {
       control &= ~COUNTER_ENABLE;
     }
     backplane.irqb().value(this, !(counter == 0 && ((control & INTERRUPT_ENABLE) != 0)));
+    short addressMask = ~0x3;
     if ((short) (address.value() & addressMask) != baseAddress) {
       return;
     }
@@ -113,19 +113,12 @@ public class Counter {
 
     if (rwb.value()) {
       switch (reg) {
-        case 0:
-          data.value((byte) (counter & 0xFF));
-          break;
-        case 1:
-          data.value((byte) ((counter >> 8) & 0xFF));
-          break;
-        case 2:
-          data.value((byte) ((counter >> 16) & 0xFF));
-          break;
-        case 3:
-          data.value(control);
-          break;
-        default:
+        case 0 -> data.value((byte) (counter & 0xFF));
+        case 1 -> data.value((byte) ((counter >> 8) & 0xFF));
+        case 2 -> data.value((byte) ((counter >> 16) & 0xFF));
+        case 3 -> data.value(control);
+        default -> {
+        }
       }
     } else {
       switch (reg) {

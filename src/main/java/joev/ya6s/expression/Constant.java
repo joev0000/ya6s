@@ -12,7 +12,7 @@ public class Constant implements Function<W65C02S, Integer> {
   private final Integer value;
 
   /**
-   * Create a new contant that always returns the provided value.
+   * Create a new constant that always returns the provided value.
    *
    * @param value the value of the constant.
    */
@@ -21,7 +21,7 @@ public class Constant implements Function<W65C02S, Integer> {
   }
 
   /**
-   * Return the contant value.
+   * Return the constant value.
    *
    * @param cpu the CPU to evaluate this constant against.
    * @return the constant value.
@@ -32,7 +32,7 @@ public class Constant implements Function<W65C02S, Integer> {
   }
 
   /**
-   * Return a hex representation of the contant.
+   * Return a hex representation of the constant.
    *
    * @return the hex value of the constant.
    */

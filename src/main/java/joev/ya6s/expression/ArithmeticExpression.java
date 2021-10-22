@@ -12,7 +12,7 @@ public class ArithmeticExpression implements Function<W65C02S, Integer> {
   /**
    * An enumeration that contains the arithmetic operations.
    */
-  public static enum Op {
+  public enum Op {
     ADD  ("+", (a, b) -> Integer.valueOf(a + b)),
     SUB  ("-", (a, b) -> Integer.valueOf(a - b)),
     AND  ("&", (a, b) -> Integer.valueOf(a & b)),
@@ -82,7 +82,7 @@ public class ArithmeticExpression implements Function<W65C02S, Integer> {
   /**
    * A String of the form "a op b".
    *
-   * @return a human readable representation of the expression.
+   * @return a human-readable representation of the expression.
    */
   @Override
   public String toString() {

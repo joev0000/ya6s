@@ -13,6 +13,7 @@ import static joev.ya6s.smartline.Termios.*;
  * Smartline is a raw-mode command line helper tool, providing lightweight
  * interactive editing of commands.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class Smartline implements AutoCloseable {
   private final InputStream in;
   private final PrintStream out;
@@ -43,9 +44,7 @@ public class Smartline implements AutoCloseable {
       termios.c_cc[VTIME] = 0;
       Termios.instance.tcsetattr(0, TCSAFLUSH, termios);
 
-      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-        public void run() { close(); }
-      }));
+      Runtime.getRuntime().addShutdownHook(new Thread(this::close));
     }
   }
 
@@ -114,47 +113,47 @@ public class Smartline implements AutoCloseable {
             }
             break;
           case CSI:
-            switch(c) {
-              case 'A': // CUP
-                if(historyCursor >= 0) {
-                  if(cursor > 0) {
+            switch (c) {
+              case 'A' -> { // CUP
+                if (historyCursor >= 0) {
+                  if (cursor > 0) {
                     out.write(String.format("\u009B%dD", cursor).getBytes());
                   }
                   sb = new StringBuilder(history.get(historyCursor));
                   cursor = sb.length();
-                  out.write(String.format("\u009BK%s", sb.toString()).getBytes());
-                  if(historyCursor > 0) {
+                  out.write(String.format("\u009BK%s", sb).getBytes());
+                  if (historyCursor > 0) {
                     historyCursor--;
                   }
                 }
                 state = State.START;
-                break;
-              case 'B': // CUD
-                if(historyCursor < history.size() - 1) {
+              }
+              case 'B' -> { // CUD
+                if (historyCursor < history.size() - 1) {
                   historyCursor++;
-                  if(cursor > 0) {
+                  if (cursor > 0) {
                     out.write(String.format("\u009B%dD", cursor).getBytes());
                   }
                   sb = new StringBuilder(history.get(historyCursor));
                   cursor = sb.length();
-                  out.write(String.format("\u009BK%s", sb.toString()).getBytes());
+                  out.write(String.format("\u009BK%s", sb).getBytes());
                 }
                 state = State.START;
-                break;
-              case 'C': // CUF
-                if(cursor < sb.length()) {
+              }
+              case 'C' -> { // CUF
+                if (cursor < sb.length()) {
                   out.write("\u009BC".getBytes());
                   cursor++;
                 }
                 state = State.START;
-                break;
-              case 'D': // CUB
-                if(cursor > 0) {
+              }
+              case 'D' -> { // CUB
+                if (cursor > 0) {
                   out.write("\u009BD".getBytes());
                   cursor--;
                 }
                 state = State.START;
-                break;
+              }
             }
         }
       }
@@ -206,8 +205,8 @@ public class Smartline implements AutoCloseable {
       while(!(s = sl.readLine(">>> ")).equals("exit")) {
         System.out.format("I read: %s [ ", s);
         byte[] b = s.getBytes();
-        for(int i = 0 ; i < b.length; i++) {
-          System.out.format("%02X ", b[i]);
+        for (byte value : b) {
+          System.out.format("%02X ", value);
         }
         System.out.println("]");
       }

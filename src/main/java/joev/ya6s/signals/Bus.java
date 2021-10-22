@@ -53,7 +53,7 @@ public class Bus {
   /**
    * Get a human-readable representation of this Bus.
    *
-   * @return the human-readable represenation of this Bus.
+   * @return the human-readable representation of this Bus.
    */
   @Override
   public String toString() {

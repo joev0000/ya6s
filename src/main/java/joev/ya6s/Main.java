@@ -29,40 +29,6 @@ public class Main {
   }
 
   public static void main(String[] args) throws Exception {
-    /*
-    final Backplane backplane = new Backplane();
-
-    final SRAM ram = new SRAM(backplane);
-    final W65C02S cpu = new W65C02S(backplane);
-
-    Bus address = backplane.address();
-    Bus data = backplane.data();
-    Signal clock = backplane.clock();
-    backplane.be().value(true);
-    backplane.sync().register(et -> {
-      if(et == Signal.EventType.POSITIVE_EDGE) {
-        System.out.format("sync: PC: %04X  A: %02X  X: %02X  Y: %02X  S: %02X  P: %02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
-      }
-    });
-
-    short start = 0x200;
-    cpu.rdy().value(false);
-    //load(backplane, start, 0xA9, 0x30, 0x85, 0x20, 0xA9, 0x12, 0x85, 0x21, 0xA0, 0x04, 0xB1, 0x20);
-    //load(backplane, start, 0xA9, 0x01, 0xD0, 0x04, 0xA9, 0x42, 0xDB, 0x00, 0xA9, 0x23, 0xDB);
-    load(backplane, start, 0xA9, 0xAA, 0x85, 0x20, 0xC7, 0x20, 0xA6, 0x20, 0xDB);
-
-    load(backplane, 0xFFFC, start & 0xFF, start >> 8);
-    cpu.rdy().value(true);
-
-    cpu.resb().value(false);
-    clock.value(false); clock.value(true);
-    clock.value(false); clock.value(true);
-    cpu.resb().value(true);
-    for(int i = 0; (i < 50 && !cpu.stopped()); i++) {
-      clock.value(false);
-      clock.value(true);
-    }
-*/
 
     final Backplane backplane = new Backplane();
     PipedInputStream uartIn = new PipedInputStream();
@@ -77,7 +43,7 @@ public class Main {
     Monitor monitor = new Monitor(backplane, cpu, System.in, System.out, toUartIn);
     if(args.length > 0) {
       Files.lines(Path.of(args[0]))
-        .map(l -> l.trim())
+        .map(String::trim)
         .filter(l -> l.length() > 0)
         .forEach(l -> {
           try {
@@ -94,7 +60,7 @@ public class Main {
   }
 
   /**
-   * This clas cannot be instantiated.
+   * This class cannot be instantiated.
    */
   private Main() {
     // private default constructor

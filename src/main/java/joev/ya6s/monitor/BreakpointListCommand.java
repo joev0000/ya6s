@@ -26,7 +26,7 @@ public class BreakpointListCommand implements Command {
   /**
    * Execute the command- list the breakpoints.
    *
-   * @param monitor the Monitor to run the command againt.
+   * @param monitor the Monitor to run the command against.
    * @return null
    */
   @Override

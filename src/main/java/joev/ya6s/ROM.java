@@ -74,15 +74,15 @@ public class ROM {
    */
   private void tick(Signal.EventType eventType) {
     if(eventType == Signal.EventType.POSITIVE_EDGE) {
-      short busAddr = (short)address.value();
-      if(rwb.value() && (short)(busAddr & mask) == maskedAddress) {
-        data.value(memory[(busAddr - base) & 0xFFFF]);
+      short busAddress = (short)address.value();
+      if(rwb.value() && (short)(busAddress & mask) == maskedAddress) {
+        data.value(memory[(busAddress - base) & 0xFFFF]);
       }
     }
   }
 
   /**
-   * Deregister from the clock Signal.
+   * Unregister from the clock Signal.
    */
   public void close() {
     clock.unregister(tickFn);

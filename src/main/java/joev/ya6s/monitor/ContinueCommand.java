@@ -35,17 +35,8 @@ public class ContinueCommand implements Command {
     Backplane backplane = monitor.backplane();
     W65C02S cpu = monitor.cpu();
     Signal clock = backplane.clock();
-    short oldPC = 0;
+
     while(!cpu.stopped()) { // or hit a breakpoint
-      /*
-      if(backplane.sync().value()) {
-        if(cpu.pc() == oldPC) {
-          System.out.println("Loop detected.");
-          break;
-        }
-        oldPC = cpu.pc();
-      }
-      */
       clock.value(true);
       clock.value(false);
     }

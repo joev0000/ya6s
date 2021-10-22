@@ -1,5 +1,8 @@
 package joev.ya6s;
 
+/**
+ * An enumeration of the machine addressing modes, which include lists of Cycles to execute.
+ */
 public enum AddressingMode {
     ILLEGAL("Illegal", ""),
     NOT_IMPLEMENTED("Not Implemented", ""),
@@ -289,9 +292,9 @@ public enum AddressingMode {
       new Cycle(true, true, false, Register.PC    , Register.NULL, true)
     );
 
-    private String modeName;
-    private String format;
-    private Cycle[] cycles;
+    private final String modeName;
+    private final String format;
+    private final Cycle[] cycles;
     AddressingMode(String modeName, String format, Cycle... cycles) {
       this.modeName = modeName;
       this.format = format;

@@ -48,10 +48,10 @@ public class LoadCommand implements Command {
       rdy.value(false);
       short loc = start;
       byte[] data = in.readAllBytes();
-      for(int i = 0; i < data.length; i++) {
+      for (byte datum : data) {
         clock.value(false);
         address.value(loc++);
-        dataBus.value(data[i]);
+        dataBus.value(datum);
         rwb.value(false);
         clock.value(true);
       }

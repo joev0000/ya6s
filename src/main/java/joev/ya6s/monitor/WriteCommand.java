@@ -42,10 +42,10 @@ public class WriteCommand implements Command {
     boolean oldRdy = rdy.value();
     rdy.value(false);
     short loc = start;
-    for(int i = 0; i < data.length; i++) {
+    for (byte datum : data) {
       clock.value(false);
       address.value(loc++);
-      dataBus.value(data[i]);
+      dataBus.value(datum);
       rwb.value(false);
       clock.value(true);
     }
@@ -62,8 +62,8 @@ public class WriteCommand implements Command {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(String.format("write %04X", start));
-    for(int i = 0; i < data.length; i++) {
-      sb.append(String.format(" %02X", data[i]));
+    for (byte datum : data) {
+      sb.append(String.format(" %02X", datum));
     }
     return sb.toString();
   }

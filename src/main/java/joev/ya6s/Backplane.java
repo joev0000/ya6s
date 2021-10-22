@@ -5,7 +5,7 @@ import joev.ya6s.signals.OpenCollector;
 import joev.ya6s.signals.Signal;
 
 /**
- * A Backplane holds the signls and busses used throughout the system.
+ * A Backplane holds the signals and busses used throughout the system.
  */
 public class Backplane {
   private final Bus address;
@@ -71,7 +71,7 @@ public class Backplane {
   /**
    * Get the vector pull signal.
    *
-   * @return the vectol pull signal.
+   * @return the vector pull signal.
    */
   public Signal vpb() { return vpb; }
 

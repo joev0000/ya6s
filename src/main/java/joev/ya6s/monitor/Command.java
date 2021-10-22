@@ -10,5 +10,5 @@ public interface Command {
    * @param monitor the Monitor which will execute this command.
    * @return a suggested next Command, or null if there is no suggestion.
    */
-  public Command execute(Monitor monitor);
+  Command execute(Monitor monitor);
 }

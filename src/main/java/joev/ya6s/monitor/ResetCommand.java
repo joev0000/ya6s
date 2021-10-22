@@ -17,8 +17,6 @@ public class ResetCommand implements Command {
 
   /**
    * Get an instance of the Reset command.
-   *
-   * @param an instance of the Reset command.
    */
   public static ResetCommand instance() { return instance; }
 
@@ -26,7 +24,7 @@ public class ResetCommand implements Command {
    * Assert the reset signal on the CPU.
    *
    * @param monitor the Monitor to execute this command against.
-   * @return a suggeted next Command.  Null.
+   * @return a suggested next Command.  Null.
    */
   @Override
   public Command execute(Monitor monitor) {

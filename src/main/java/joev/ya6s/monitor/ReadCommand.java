@@ -11,7 +11,7 @@ import joev.ya6s.signals.Signal;
 public class ReadCommand implements Command {
   /**
    * A mapping of byte to terminal-friendly chars to be used in the READ
-   * command. Uses a simple mapping of the Unicode Latin-1 Supplimental
+   * command. Uses a simple mapping of the Unicode Latin-1 Supplemental
    * to bytes 128 through 255.
    */
   public final static char[] ascii = {
@@ -33,8 +33,8 @@ public class ReadCommand implements Command {
     'ð', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', '÷',  'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'þ', 'ÿ'
   };
 
-  private short start;
-  private short end;
+  private final short start;
+  private final short end;
 
   /**
    * Create a Read command with the given start location, and an end location

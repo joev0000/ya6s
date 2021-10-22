@@ -35,7 +35,7 @@ import java.util.Map;
  *         STA $F003   ; Line Control Register = A
  *
  * LOOP    LDA #$01    ; Set Data Ready bit
- * RLOOP   BIT $F005   ; Check Line Status Regsiter
+ * RLOOP   BIT $F005   ; Check Line Status Register
  *         BEQ RLOOP   ; If not set, try again.
  *         LDX $F000   ; X = Receive Buffer Register
  *         LDA #$20    ; Set the Transmitter Holding Register Empty bit.
@@ -77,7 +77,7 @@ public class UART {
 
   // 16550D Registers
 
-  /** Reciever Buffer Register */
+  /** Receiver Buffer Register */
   private byte RBR = 0;
 
   /** Transmitter Holding Register */
@@ -156,7 +156,7 @@ public class UART {
       base = (short)Integer.parseInt(options.get("base"), 16);
     }
 
-    if(!options.containsKey("port") || "tty".equals(options.get("port").toLowerCase())) {
+    if(!options.containsKey("port") || "tty".equalsIgnoreCase(options.get("port"))) {
       this.in = Monitor.ttyIn;
       this.out = Monitor.ttyOut;
     } else {
@@ -199,7 +199,7 @@ public class UART {
         // Block if there's nothing to write.
         if(xmitHead == xmitTail) {
           // Set the Transmitter Empty and
-          // Trasmitter Holding Register Empty Flag
+          // Transmitter Holding Register Empty Flag
           LSR |= (TEMT | THRE);
           try {
             xmitFifo.wait();
@@ -352,7 +352,7 @@ public class UART {
   }
 
   /**
-   * Write a byte to the transmit FIFO.
+   * Write a byte to the transmitter FIFO.
    */
   private void xmit() {
     // Clear Transmitter Holding Register Empty flag.
@@ -375,7 +375,7 @@ public class UART {
   }
 
   /**
-   * Read a byte from the receive FIFO.
+   * Read a byte from the receiver FIFO.
    */
   private void recv() {
     // populate RBR from fifo

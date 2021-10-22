@@ -11,7 +11,7 @@ import java.util.Map;
  * circuit.
  */
 public class OpenCollector extends Signal {
-  private Map<Object, Boolean> map = new HashMap<>();
+  private final Map<Object, Boolean> map = new HashMap<>();
 
   /**
    * Create a new OpenCollector with the given name.
@@ -54,7 +54,7 @@ public class OpenCollector extends Signal {
    *     oc.value(this, true);
    *
    * @param o the input component.
-   * @param value the value to set for that component..
+   * @param value the value to set for that component.
    */
   public void value(Object o, boolean value) {
     boolean oldValue = value();
