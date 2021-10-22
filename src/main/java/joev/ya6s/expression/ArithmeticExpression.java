@@ -3,12 +3,12 @@ package joev.ya6s.expression;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 /**
  * An ArithmeticExpression evaluates an arithmetic expression in the context
  * of a given CPU.*/
-public class ArithmeticExpression implements Function<W65C02, Integer> {
+public class ArithmeticExpression implements Function<W65C02S, Integer> {
   /**
    * An enumeration that contains the arithmetic operations.
    */
@@ -51,8 +51,8 @@ public class ArithmeticExpression implements Function<W65C02, Integer> {
     }
   }
 
-  private final Function<W65C02, Integer> a;
-  private final Function<W65C02, Integer> b;
+  private final Function<W65C02S, Integer> a;
+  private final Function<W65C02S, Integer> b;
   private final Op op;
 
   /**
@@ -62,7 +62,7 @@ public class ArithmeticExpression implements Function<W65C02, Integer> {
    * @param a the first input value.
    * @param b the second input value.
    */
-  public ArithmeticExpression(Op op, Function<W65C02, Integer> a, Function<W65C02, Integer> b) {
+  public ArithmeticExpression(Op op, Function<W65C02S, Integer> a, Function<W65C02S, Integer> b) {
     this.op = op;
     this.a = a;
     this.b = b;
@@ -75,7 +75,7 @@ public class ArithmeticExpression implements Function<W65C02, Integer> {
    * @return the result of the operation.
    */
   @Override
-  public Integer apply(W65C02 cpu) {
+  public Integer apply(W65C02S cpu) {
     return op.apply(a.apply(cpu), b.apply(cpu));
   }
 

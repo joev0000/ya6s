@@ -2,20 +2,20 @@ package joev.ya6s.monitor;
 
 import java.util.function.Predicate;
 
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 /**
  * Command to set a conditional breakpoint.
  */
 public class BreakpointWhenCommand implements Command {
-  private Predicate<W65C02> predicate;
+  private Predicate<W65C02S> predicate;
 
   /**
    * Create a new breakpoint from the Predicate.
    *
    * @param predicate the breakpoint to test.
    */
-  public BreakpointWhenCommand(Predicate<W65C02> predicate) {
+  public BreakpointWhenCommand(Predicate<W65C02S> predicate) {
     this.predicate = predicate;
   }
 

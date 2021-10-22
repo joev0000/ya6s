@@ -2,18 +2,21 @@ package joev.ya6s.expression;
 
 import java.util.function.Function;
 
-import joev.ya6s.W65C02;
-import static joev.ya6s.W65C02.CARRY;
-import static joev.ya6s.W65C02.ZERO;
-import static joev.ya6s.W65C02.NEGATIVE;
-import static joev.ya6s.W65C02.OVERFLOW;
-import static joev.ya6s.W65C02.DECIMAL;
-import static joev.ya6s.W65C02.INTERRUPT_DISABLE;
+import joev.ya6s.W65C02S;
 
 /**
- * A Function<W65C02, Integer> that returns the value of a register or flag.
+ * A Function<W65C02S, Integer> that returns the value of a register or flag.
  */
-public class Register implements Function<W65C02, Integer> {
+public class Register implements Function<W65C02S, Integer> {
+  private static final byte NEGATIVE          = (byte)0b10000000;
+  private static final byte OVERFLOW          = (byte)0b01000000;
+  private static final byte RESERVED          = (byte)0b00100000;
+  private static final byte BREAK             = (byte)0b00010000;
+  private static final byte DECIMAL           = (byte)0b00001000;
+  private static final byte INTERRUPT_DISABLE = (byte)0b00000100;
+  private static final byte ZERO              = (byte)0b00000010;
+  private static final byte CARRY             = (byte)0b00000001;
+
   private static final Integer zero = Integer.valueOf(0);
   private static final Integer one  = Integer.valueOf(1);
 
@@ -51,7 +54,7 @@ public class Register implements Function<W65C02, Integer> {
   public static final Register D  = new Register("D",  cpu -> (cpu.p() & DECIMAL) == 0 ? zero : one);
 
   private final String name;
-  private final Function<W65C02, Integer> fn;
+  private final Function<W65C02S, Integer> fn;
 
 
   /**
@@ -60,7 +63,7 @@ public class Register implements Function<W65C02, Integer> {
    * @param name the name of the register.
    * @param fn the function that can evaluate the value of the register.
    */
-  private Register(String name, Function<W65C02, Integer> fn) {
+  private Register(String name, Function<W65C02S, Integer> fn) {
     this.name = name;
     this.fn = fn;
   }
@@ -72,7 +75,7 @@ public class Register implements Function<W65C02, Integer> {
    * @return the value of the register.
    */
   @Override
-  public Integer apply(W65C02 cpu) {
+  public Integer apply(W65C02S cpu) {
     return fn.apply(cpu);
   }
 

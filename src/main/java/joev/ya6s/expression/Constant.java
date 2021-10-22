@@ -2,13 +2,13 @@ package joev.ya6s.expression;
 
 import java.util.function.Function;
 
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 /**
- * A Function<W65C02, Integer> that returns a constant value regardless
+ * A Function<W65C02S, Integer> that returns a constant value regardless
  * of the state of the CPU.
  */
-public class Constant implements Function<W65C02, Integer> {
+public class Constant implements Function<W65C02S, Integer> {
   private final Integer value;
 
   /**
@@ -27,7 +27,7 @@ public class Constant implements Function<W65C02, Integer> {
    * @return the constant value.
    */
   @Override
-  public Integer apply(W65C02 cpu) {
+  public Integer apply(W65C02S cpu) {
     return value;
   }
 

@@ -9,19 +9,20 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class AbsoluteXYTests {
   private Backplane backplane;
-  private W65C02 cpu;
+  private W65C02S cpu;
   private SRAM ram;
 
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
-    cpu = new W65C02(backplane);
+    cpu = new W65C02S(backplane);
     ram = new SRAM(backplane);
   }
 
   @ParameterizedTest
   @MethodSource("tests")
   void test(Parameters params) {
+    System.out.format("TEST: %s: %s%n", params.name(), params.program());
     TestUtils.executeTest(params, backplane, cpu);
   }
 
@@ -33,7 +34,7 @@ public class AbsoluteXYTests {
         A9 42    ; LDA #$42
         A2 60    ; LDX #$60
         BD 00 10 ; LDA $1000,X
-        """, 15,
+        """, 14,
         Assertions.assertA(0x23)),
 
       params("STA ,X", """
@@ -63,7 +64,7 @@ public class AbsoluteXYTests {
         A9 42    ; LDA #$42
         A0 06    ; LDY #$06
         BE 40 20 ; LDX $2040,Y
-        """, 15,
+        """, 14,
         Assertions.assertX(0x23))
     );
   }

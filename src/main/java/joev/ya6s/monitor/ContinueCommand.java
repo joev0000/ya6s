@@ -1,7 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Signal;
 
 /**
@@ -33,10 +33,11 @@ public class ContinueCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
-    W65C02 cpu = monitor.cpu();
+    W65C02S cpu = monitor.cpu();
     Signal clock = backplane.clock();
     short oldPC = 0;
     while(!cpu.stopped()) { // or hit a breakpoint
+      /*
       if(backplane.sync().value()) {
         if(cpu.pc() == oldPC) {
           System.out.println("Loop detected.");
@@ -44,13 +45,14 @@ public class ContinueCommand implements Command {
         }
         oldPC = cpu.pc();
       }
+      */
       clock.value(true);
       clock.value(false);
     }
     if(cpu.stopped()) {
-      System.out.println("Stopped.");
+      System.out.println("\nStopped.");
     }
-    System.out.format("PC: $%04X  A: $%02X  X: $%02X  Y: $%02X  S: $%02X  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
+    System.out.format("PC: $%04X  A: $%02X  X: $%02X  Y: $%02X  S: $%02X  P: $%02X (%s) cycles: %d%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
     return null;
   }
 

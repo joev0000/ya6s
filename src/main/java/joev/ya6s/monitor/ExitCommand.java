@@ -1,7 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 /**
  * Command used to exit the monitor.

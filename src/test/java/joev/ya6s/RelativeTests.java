@@ -9,13 +9,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class RelativeTests {
   private Backplane backplane;
-  private W65C02 cpu;
+  private W65C02S cpu;
   private SRAM ram;
 
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
-    cpu = new W65C02(backplane);
+    cpu = new W65C02S(backplane);
     ram = new SRAM(backplane);
 
     TestUtils.load(backplane, cpu, 0x0260, "A9 42 DB");
@@ -107,7 +107,7 @@ public class RelativeTests {
         85 33    ; STA $33
         5F 33 59 ; BBR5 $33,$#59 ($260)
         A9 23    ; LDA #$23
-        """, 13,
+        """, 12,
         Assertions.assertA(0x42)),
 
       params("BBR5 false", """
@@ -123,7 +123,7 @@ public class RelativeTests {
         85 33    ; STA $33
         CF 33 59 ; BBS4 $33,$#59 ($260)
         A9 23    ; LDA #$23
-        """, 13,
+        """, 12,
         Assertions.assertA(0x42)),
 
       params("BBS4 false", """

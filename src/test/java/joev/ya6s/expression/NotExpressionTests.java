@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import joev.ya6s.Backplane;
 import joev.ya6s.SRAM;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 public class NotExpressionTests {
   private Backplane backplane;
@@ -26,7 +26,7 @@ public class NotExpressionTests {
     RelationalExpression eq = new RelationalExpression(RelationalExpression.Op.EQUALS, a, b);
     NotExpression expr = new NotExpression(eq);
  
-    assertTrue(expr.test(new W65C02(backplane)));
+    assertTrue(expr.test(new W65C02S(backplane)));
   }
 
   @Test
@@ -35,7 +35,7 @@ public class NotExpressionTests {
     RelationalExpression eq = new RelationalExpression(RelationalExpression.Op.EQUALS, a, a);
     NotExpression not = new NotExpression(eq);
     NotExpression notNot = new NotExpression(not);
-    W65C02 cpu = new W65C02(backplane);
+    W65C02S cpu = new W65C02S(backplane);
 
     assertFalse(not.test(cpu));
     assertTrue(notNot.test(cpu));

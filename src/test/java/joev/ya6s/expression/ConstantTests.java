@@ -3,7 +3,7 @@ package joev.ya6s.expression;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test;
  */
 public class ConstantTests {
   private Backplane backplane;
-  private W65C02 cpu;
+  private W65C02S cpu;
 
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
-    cpu = new W65C02(backplane);
+    cpu = new W65C02S(backplane);
   }
 
   @Test

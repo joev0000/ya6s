@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 import joev.ya6s.expression.Constant;
 import joev.ya6s.expression.Register;
 import joev.ya6s.expression.RelationalExpression;
@@ -423,8 +423,8 @@ Register breakpointRegister(): {
 }
 
 RelationalExpression relationalExpr(): {
-  Function<W65C02, Integer> a;
-  Function<W65C02, Integer> b;
+  Function<W65C02S, Integer> a;
+  Function<W65C02S, Integer> b;
   Token opToken;
 }
 {
@@ -448,7 +448,7 @@ RelationalExpression relationalExpr(): {
 
 
 Command breakWhen(): {
-  Predicate<W65C02> e;
+  Predicate<W65C02S> e;
 }
 {
   <BREAK> <WHEN> e=relationalExpr() <EOF> { return new BreakpointWhenCommand(e); }

@@ -2,12 +2,12 @@ package joev.ya6s.expression;
 
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 /**
  * A LogicExpression evaluates the truth of two sub-expressions.
  */
-public class LogicExpression implements Predicate<W65C02> {
+public class LogicExpression implements Predicate<W65C02S> {
   /**
    * An enumeration that contains the logic operations.
    */
@@ -46,13 +46,13 @@ public class LogicExpression implements Predicate<W65C02> {
   }
 
   private final Op op;
-  private final Predicate<W65C02> a;
-  private final Predicate<W65C02> b;
+  private final Predicate<W65C02S> a;
+  private final Predicate<W65C02S> b;
 
   /**
    * Create a new logic expression using the given operator and sub-expressions.
    */
-  public LogicExpression(LogicExpression.Op op, Predicate<W65C02> a, Predicate<W65C02> b) {
+  public LogicExpression(LogicExpression.Op op, Predicate<W65C02S> a, Predicate<W65C02S> b) {
     this.a = a;
     this.b = b;
     this.op = op;
@@ -65,7 +65,7 @@ public class LogicExpression implements Predicate<W65C02> {
    * @return the result of the logic operation.
    */
   @Override
-  public boolean test(W65C02 cpu) {
+  public boolean test(W65C02S cpu) {
     return op.test(a.test(cpu), b.test(cpu));
   }
 

@@ -1,7 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Signal;
 
 /**
@@ -31,7 +31,7 @@ public class StepCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
-    W65C02 cpu = monitor.cpu();
+    W65C02S cpu = monitor.cpu();
 
     Signal sync = backplane.sync();
     Signal clock = backplane.clock();

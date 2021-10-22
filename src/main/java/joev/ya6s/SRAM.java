@@ -81,9 +81,23 @@ public class SRAM {
       if((short)(busAddr & mask) == maskedAddress) {
         if(rwb.value()) {
           data.value(memory[busAddr & 0xFFFF]);
+          /*
+          if((busAddr & 0xFF00) == 0x0000 ||
+             (busAddr & 0xFF00) == 0x0100 || 
+             (busAddr & 0xFF00) == 0x0200) {
+            System.out.format("SRAM: load  %04X: %02X%n", busAddr, data.value());
+          }
+          */
         }
         else {
           memory[busAddr & 0xFFFF] = (byte)data.value();
+          /*
+          if((busAddr & 0xFF00) == 0x0000 ||
+             (busAddr & 0xFF00) == 0x0100 || 
+             (busAddr & 0xFF00) == 0x0200) {
+            System.out.format("SRAM: store %04X: %02X%n", busAddr, data.value());
+          }
+          */
         }
       }
     }

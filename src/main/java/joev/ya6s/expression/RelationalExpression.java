@@ -3,13 +3,13 @@ package joev.ya6s.expression;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 
 /**
  * A RelationalExpression compares the values of two arithmetic expressions
  * in the context of a given CPU.
  */
-public class RelationalExpression implements Predicate<W65C02> {
+public class RelationalExpression implements Predicate<W65C02S> {
   /**
    * An enumeration that contains the relational operations.
    */
@@ -50,8 +50,8 @@ public class RelationalExpression implements Predicate<W65C02> {
     }
   }
 
-  private final Function<W65C02, Integer> a;
-  private final Function<W65C02, Integer> b;
+  private final Function<W65C02S, Integer> a;
+  private final Function<W65C02S, Integer> b;
   private final Op op;
 
   /**
@@ -62,7 +62,7 @@ public class RelationalExpression implements Predicate<W65C02> {
    * @param a the left-hand side of the expression.
    * @param b the right-hand side of the expression.
    */
-  public RelationalExpression(Op op, Function<W65C02, Integer> a, Function<W65C02, Integer> b) {
+  public RelationalExpression(Op op, Function<W65C02S, Integer> a, Function<W65C02S, Integer> b) {
     this.a = a;
     this.b = b;
     this.op = op;
@@ -75,7 +75,7 @@ public class RelationalExpression implements Predicate<W65C02> {
    * @return true if the relationship holds.
    */
   @Override
-  public boolean test(W65C02 cpu) {
+  public boolean test(W65C02S cpu) {
     return op.test(a.apply(cpu), b.apply(cpu));
   }
 

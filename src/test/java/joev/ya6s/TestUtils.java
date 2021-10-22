@@ -19,7 +19,7 @@ public class TestUtils {
    * @param maxCycles the maxiumum number of cycles to run.
    * @throws CyclesExceededException if the program does not stop before maxCycles
    */
-  public static int run(Backplane backplane, W65C02 cpu, int maxCycles) {
+  public static int run(Backplane backplane, W65C02S cpu, int maxCycles) {
     int cycles = 0;
     Signal clock = backplane.clock();
     cpu.resb().value(true);
@@ -49,7 +49,7 @@ public class TestUtils {
    * @param location the location within memory where the bytes will be written.
    * @param hex the hex bytes to write into the system.
    */
-  public static void load(Backplane backplane, W65C02 cpu, int location, String hex) {
+  public static void load(Backplane backplane, W65C02S cpu, int location, String hex) {
     Bus address = backplane.address();
     Bus data = backplane.data();
     Signal rwb = backplane.rwb();
@@ -76,19 +76,27 @@ public class TestUtils {
 
   public static void executeTest(Parameters params) {
     Backplane backplane = new Backplane();
-    W65C02 cpu = new W65C02(backplane);
+    W65C02S cpu = new W65C02S(backplane);
     SRAM ram = new SRAM(backplane);
 
     executeTest(params, backplane, cpu);
   }
 
-  public static void executeTest(Parameters params, Backplane backplane, W65C02 cpu) {
+  public static void executeTest(Parameters params, Backplane backplane, W65C02S cpu) {
+    Signal clock = backplane.clock();
     TestUtils.load(backplane, cpu, 0x200, params.program() + "\nDB");
     TestUtils.load(backplane, cpu, 0xFFFC, "00 02");
 
-    int cycles = params.cycles() + 7 + 3;  // + reset + STP
+    backplane.be().value(true);
+    cpu.resb().value(false);
+    clock.value(false); clock.value(true);
+    clock.value(false); clock.value(true);
+    cpu.resb().value(true);
+
+//    int cycles = params.cycles() + 7 + 3;  // + reset + STP
+    int cycles = params.cycles() + 7 + 1;  // + reset + STP
     assertEquals(cycles, TestUtils.run(backplane, cpu, cycles));
-    for(Consumer<W65C02> assertion: params.asserts()) {
+    for(Consumer<W65C02S> assertion: params.asserts()) {
       assertion.accept(cpu);
     }
   }

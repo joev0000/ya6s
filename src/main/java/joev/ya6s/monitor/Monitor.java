@@ -1,7 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Signal;
 import joev.ya6s.smartline.Smartline;
 import java.io.InputStream;
@@ -18,11 +18,11 @@ import java.util.function.Predicate;
 public class Monitor {
   //private final MonitorParser parser;
   private final Backplane backplane;
-  private final W65C02 cpu;
+  private final W65C02S cpu;
   private final Smartline sl;
   private final PrintStream out;
   private final OutputStream console;
-  private final List<Predicate<W65C02>> breakpoints = new ArrayList<>();
+  private final List<Predicate<W65C02S>> breakpoints = new ArrayList<>();
 
   public static InputStream ttyIn;
   public static OutputStream ttyOut;
@@ -34,7 +34,7 @@ public class Monitor {
    * @param cpu the CPU of the system.
    * @param in the input stream of the user commands.
    */
-  public Monitor(Backplane backplane, W65C02 cpu, InputStream in, OutputStream out, OutputStream console) {
+  public Monitor(Backplane backplane, W65C02S cpu, InputStream in, OutputStream out, OutputStream console) {
     this.backplane = backplane;
     this.cpu = cpu;
     this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
@@ -47,7 +47,7 @@ public class Monitor {
    *
    * @param predicate the Predicate to test.
    */
-  public void addBreakpoint(Predicate<W65C02> predicate) {
+  public void addBreakpoint(Predicate<W65C02S> predicate) {
     System.out.format("Adding breakpoint: %s%n", predicate);
     breakpoints.add(predicate);
   }
@@ -57,7 +57,7 @@ public class Monitor {
    *
    * @return the list of breakpoints.
    */
-  public List<Predicate<W65C02>> listBreakpoints() {
+  public List<Predicate<W65C02S>> listBreakpoints() {
     return breakpoints;
   }
 
@@ -75,7 +75,7 @@ public class Monitor {
    *
    * @return the CPU.
    */
-  public W65C02 cpu() {
+  public W65C02S cpu() {
     return cpu;
   }
 
@@ -110,7 +110,7 @@ public class Monitor {
           command = parser.command();
         }
 
-        Predicate<W65C02> breakpoint = null;
+        Predicate<W65C02S> breakpoint = null;
         // At this point, the Continue command was used.
         out.println("(Ctrl-E to pause.)");
 
@@ -119,7 +119,7 @@ public class Monitor {
         while(!cpu.stopped() && (c = sl.read()) != 0x05) { // ^E
           // if sync, check breakpoint
           if(backplane.sync().value()) {
-            for(Predicate<W65C02> predicate: breakpoints) {
+            for(Predicate<W65C02S> predicate: breakpoints) {
               if(predicate.test(cpu)) {
                 breakpoint = predicate;
                 break;
@@ -147,7 +147,7 @@ public class Monitor {
         else {
           out.println(cpu.stopped() ? "Stopped." : "Paused.");
         }
-        out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s)%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status());
+        out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", cpu.pc(), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
       }
       catch (Exception e) {
         out.format("ERROR: %s%n", e.getMessage());

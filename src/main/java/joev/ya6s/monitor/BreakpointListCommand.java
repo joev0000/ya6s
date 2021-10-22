@@ -1,6 +1,6 @@
 package joev.ya6s.monitor;
 
-import joev.ya6s.W65C02;
+import joev.ya6s.W65C02S;
 import java.util.function.Predicate;
 
 /**
@@ -32,7 +32,7 @@ public class BreakpointListCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     int i = 0;
-    for(Predicate<W65C02> p: monitor.listBreakpoints()) {
+    for(Predicate<W65C02S> p: monitor.listBreakpoints()) {
       System.out.format("%d: %s%n", i++, p);
     }
     return null;

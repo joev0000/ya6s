@@ -13,6 +13,9 @@ public class Backplane {
   private final Signal rwb;
   private final Signal sync;
   private final Signal clock;
+  private final Signal vpb;
+  private final Signal mlb;
+  private final Signal be;
   private final OpenCollector irqb;
 
   /**
@@ -24,6 +27,9 @@ public class Backplane {
     rwb = new Signal("rwb");
     sync = new Signal("sync");
     clock = new Signal("clock");
+    vpb = new Signal("vpb");
+    mlb = new Signal("mlb");
+    be = new Signal("be");
     irqb = new OpenCollector("irqb");
   }
 
@@ -61,6 +67,27 @@ public class Backplane {
    * @return the clock signal.
    */
   public Signal clock() { return clock; }
+
+  /**
+   * Get the vector pull signal.
+   *
+   * @return the vectol pull signal.
+   */
+  public Signal vpb() { return vpb; }
+
+  /**
+   * Get the memory lock signal.
+   *
+   * @return the memory lock signal.
+   */
+  public Signal mlb() { return mlb; }
+
+  /**
+   * Get the bus enable signal.
+   *
+   * @return the bus enable signal.
+   */
+  public Signal be() { return be; }
 
   /**
    * Get the irqb open collector signal.
