@@ -21,7 +21,7 @@ public class Register implements Function<W65C02S, Integer> {
   private static final Integer one  = 1;
 
   /** The PC register. */
-  public static final Register PC = new Register("PC", cpu -> cpu.pc() & 0xFFFF);
+  public static final Register PC = new Register("PC", cpu -> (cpu.pc() - 1) & 0xFFFF);
 
   /** The A register. */
   public static final Register A  = new Register("A",  cpu -> cpu.a() & 0xFF);
