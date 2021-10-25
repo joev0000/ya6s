@@ -94,6 +94,7 @@ public class Monitor {
   public void run() {
     MonitorParser parser;
     Signal clock = backplane.clock();
+    Signal sync = backplane.sync();
     Command command;
     int c;
     while(true) {
@@ -118,7 +119,7 @@ public class Monitor {
         // entered in the console.
         while(!cpu.stopped() && (c = sl.read()) != 0x05) { // ^E
           // if sync, check breakpoint
-          if(backplane.sync().value()) {
+          if(sync.value()) {
             for(Predicate<W65C02S> predicate: breakpoints) {
               if(predicate.test(cpu)) {
                 breakpoint = predicate;
@@ -137,7 +138,7 @@ public class Monitor {
         // The processor is either stopped or paused. Cycle the clock
         // until the next SYNC pulse- to make sure the entire instruction
         // has been executed.
-        while(!backplane.sync().value()) {
+        while(!sync.value()) {
           clock.value(true);
           clock.value(false);
         }
