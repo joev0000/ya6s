@@ -188,7 +188,7 @@ public enum AddressingMode {
       new Cycle(true, true, false, Register.AA_INC, Register.NEW_PCL, true),
       new Cycle(true, true, false, Register.AA    , Register.NEW_PCH, true)
     ),
-    STACK_RES("Stack", "",
+    STACK_INTERRUPT("Stack", "",
       new Cycle(true, true, true,  Register.PC_INC, Register.OP,   true),
       new Cycle(true, true, false, Register.PC,     Register.IO,   true),
       new Cycle(true, true, true,  Register.S_DEC,  Register.PCH,  true),

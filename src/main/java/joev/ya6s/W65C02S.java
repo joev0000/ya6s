@@ -501,6 +501,11 @@ public class W65C02S {
         p &= ~DECIMAL;
         //System.out.format("tick: resb is true, setting interruptMode to RESET, p to %02X%n", p);
       }
+      else if(!irqb.value()) {
+        interruptMode = InterruptMode.IRQ;
+        p |= INTERRUPT_DISABLE;
+        p &= ~DECIMAL;
+      }
       if(be.value()) {
         data = (byte)dataBus.value(); // latch the data bus value.
         //System.out.format("tick: latched data %02X from bus.%n", data);
@@ -629,7 +634,7 @@ public class W65C02S {
       else if(cycle == 1) {
         // previous cycle was an opcode read, make sure we have
         // the right cycles for the rest of the instruction.
-        cycles = interruptMode == InterruptMode.RESET ? STACK_RES.cycles() : addressingModes[op & 0xFF].cycles();
+        cycles = interruptMode == InterruptMode.NONE ? addressingModes[op & 0xFF].cycles() : STACK_INTERRUPT.cycles();
        //System.out.format("tick: PC: %04X op: %s, A: %02X, X: %02X, Y: %02X, S: %02X, P: %02X (%s)%n", (short)(pc-1), instructions[op & 0xFF], a, x, y, s, p, status());
       }
 
