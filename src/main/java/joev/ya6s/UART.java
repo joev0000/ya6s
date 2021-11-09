@@ -201,6 +201,10 @@ public class UART {
           // Set the Transmitter Empty and
           // Transmitter Holding Register Empty Flag
           LSR |= (TEMT | THRE);
+
+          // If the THRE Interrupt is enabled, raise the interrupt.
+          updateInterruptStatus();
+
           try {
             xmitFifo.wait();
           }
@@ -216,6 +220,7 @@ public class UART {
       catch (InterruptedException ie) {
         // eat it.
       }
+
       synchronized(xmitFifo) {
         if(xmitHead != xmitTail) {
           try {
@@ -320,6 +325,7 @@ public class UART {
         case 1:
           if((LCR & 0x80) == 0) {
             IER = b;
+            updateInterruptStatus();
           }
           else {
             DLM = b;
@@ -334,6 +340,25 @@ public class UART {
         case 7: SCR = b; break;
         default:
       }
+    }
+  }
+
+  /**
+   * Update the interrupt registers to indicate the source of the interrupt.
+   */
+  private void updateInterruptStatus() {
+    if(IER == 0) {
+      IIR |= 1; IIR &= ~0b00001110;
+      backplane.irqb().value(this, true);
+      return;
+    }
+
+    if(((IER & 0b00000010) != 0) && ((LSR & THRE) != 0)) {
+      IIR = 2;
+      backplane.irqb().value(this, false);
+    }
+    else {
+      IIR = 1;
     }
   }
 
@@ -369,6 +394,9 @@ public class UART {
         }
         // Clear the Transmitter Empty flag.
         LSR &= ~TEMT;
+
+        // If the THRE Interrupt is enabled, clear the interrupt.
+        updateInterruptStatus();
       }
       xmitFifo.notify();
     }

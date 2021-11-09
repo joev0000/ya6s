@@ -103,8 +103,10 @@ public class Counter {
     if (counter == 0) {
       control |= ZERO;
       control &= ~COUNTER_ENABLE;
+      if((control & INTERRUPT_ENABLE) != 0) {
+        backplane.irqb().value(this, false);
+      }
     }
-    backplane.irqb().value(this, !(counter == 0 && ((control & INTERRUPT_ENABLE) != 0)));
     short addressMask = ~0x3;
     if ((short) (address.value() & addressMask) != baseAddress) {
       return;
@@ -148,6 +150,7 @@ public class Counter {
       else {
         control &= ~ZERO;
       }
+      backplane.irqb().value(this, !(((control & INTERRUPT_ENABLE) != 0) && (counter == 0)));
     }
   }
 }
