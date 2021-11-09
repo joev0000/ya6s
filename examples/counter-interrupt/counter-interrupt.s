@@ -1,11 +1,17 @@
-        .PC02
+        .IMPORT BUFINI
+        .IMPORT BUFRD
+        .IMPORT BPUTS
+
         .SEGMENT "CODE"
+        .PC02
 
 UART    :=      $F000           ; UART base address
-U_RBR   :=      UART + 0        ; Receiver Buffer Register
-U_THR   :=      UART + 0        ; Transmitter Holding Register
-U_DLL   :=      UART + 0        ; Divisor Latch, Least Significant
-U_DLM   :=      UART + 1        ; Diviror Latch, Most Significant
+U_RBR   :=      UART + 0        ; Receiver Buffer Register (read)
+U_THR   :=      UART + 0        ; Transmitter Holding Register (write)
+U_DLL   :=      UART + 0        ; Divisor Latch, Least Significant (DLAB=1)
+U_DLM   :=      UART + 1        ; Divisor Latch, Most Significant (DLAB=1)
+U_IER   :=      UART + 1        ; Interrupt Enable Register
+U_IIR   :=      UART + 2        ; Interrupt Identification Register (read)
 U_LCR   :=      UART + 3        ; Line Control Register
 U_LSR   :=      UART + 5        ; Line Status Register
 
@@ -15,39 +21,20 @@ C_MID   :=      COUNTR + 1      ; Middle bits of counter
 C_HI    :=      COUNTR + 2      ; High bits of counter
 C_CTRL  :=      COUNTR + 3      ; Counter control register
 
-START:  JSR BUFINI
-        LDA #$FE
-        STA BUFFER+0
-        STA BUFFER+1
-        JSR BUFRD
-
-        LDA #'Y'
-        JSR BUFWR
-
-        LDA #'A'
-        JSR BUFWR
-
-        LDA #'6'
-        JSR BUFWR
-
-        LDA #'S'
-        JSR BUFWR
-
-        JSR BUFRD
-        JSR BUFRD
-        JSR BUFRD
-        JSR BUFRD
-        STP
-
-STARTX:  JSR     U_INIT          ; Initialize UART
+START:  LDX     #$FF            ; Initialize stack.
+        TXS
+        JSR     U_INIT          ; Initialize UART
         JSR     C_INIT          ; Initialize counter
+        JSR     BUFINI          ; Initialize ring buffer
 
         LDA     C_CTRL          ; A = Counter control
         ORA     #%00000101      ; set Counter Enable and Counter Interrupt bits
         STA     C_CTRL          ; Store counter control
 
-SPIN:   NOP                     ; TODO: This can be WAI
-        BRA     SPIN            ; Repeat forever.
+        CLI                     ; Clear interrupt disable flag.
+
+@SPIN:  NOP                     ; TODO: This can be WAI
+        BRA     @SPIN           ; Repeat forever.
 
 C_INIT: LDA     C_CTRL          ; A = Counter control
         AND     #%11111010      ; Clear counter and interrupt enable bits
@@ -58,6 +45,7 @@ C_INIT: LDA     C_CTRL          ; A = Counter control
         LDA     #$42            ; A = Middle bits of 1000000(10)
         STA     C_MID           ; Store them in counter mid
         LDA     #$0F            ; A = High bits of 1000000(10)
+        ;LDA     #$00
         STA     C_HI            ; Store them in counter high
         RTS                     ; return
 
@@ -74,116 +62,84 @@ U_INIT: LDA     #$83            ; A = Set Divisor Latch Access Bit, 8-N-1
                                 ;   STA U_DLM
         LDA     #$03            ; A = Clear Divisor Latch Access Bit, 8-N-1
         STA     U_LCR           ; Line Control Register = A
-        ; TODO: enable interrupts
         RTS                     ; return
 
-BUFINI: PHA                     ; Save A
-        LDA     #$02            ; X = 2
-        STA     BUFFER+0        ; Set Read Index to 2
-        STA     BUFFER+1        ; Set Write Index to 2
+;
+; Counter interrupt handler
+;
+; Writes a message to the ring buffer, and enables write interrupts in UART
+;
+C_IRQ:
+        PHA                     ; Stash A
+        PHX                     ; Stash X
+        STZ     C_CTRL          ; Disable counter and interrupt enable bits
+        LDA     #>TICK          ; Load the hi pointer to the message
+        LDX     #<TICK          ; Load the lo pointer to the message
+        JSR     BPUTS           ; Write the message to the ring buffer
+        LDA     #%00000010      ; Enable Transmitter Holding Register Empty Interrupt
+        TSB     U_IER           ; Set the interrupt bit.
+        JSR     C_INIT          ; Reinitialize counter
+        LDA     #%00000101      ; Counter Enable the Counter Interrupt bits.
+        TSB     C_CTRL          ; set the bits on Counter
+        PLX                     ; Restore X
         PLA                     ; Restore A
-        RTS                     ; Return to caller
+        RTI                     ; Return from interrupt
 
-; if [0] == [1], the buffer is empty.
-; else [0]++, return [0].
-BUFRD:  PHX                     ; Save X
+;
+; UART interrupt handler
+;
+; If the transmitter holding register is empty, read a byte from the ring
+; buffer and write it to the transmitter.  If the ring buffer is empty,
+; disable the UART write interrupts.
+;
+U_IRQ:
+        PHA                     ; Stash A
+        LDA     #%00000110      ; Interrupt type mask
+        AND     U_IIR           ; Check the interrupt type
+        CMP     #%00000010      ; Is it THRE?
+        BNE     @DONE           ; No, we're done here
 
-        LDX     BUFFER+0        ; X = Read Index
-        CPX     BUFFER+1        ; Compare with the Write Index
-        BEQ     BUFRD8          ; If same, singal buffer empty
+        JSR     BUFRD           ; Get the next byte from the buffer
+        BCS     @EMPTY          ; The buffer is empty, skip ahead.
 
-        CPX     #$FF            ; Compere with $#FF
-        BNE     BUFRD1          ; If not #$FF, skip ahead.
-        LDX     #$01            ; X = 1, which will be incremented next.
-
-BUFRD1: INX                     ; Increment Read Index
-        LDA     BUFFER,X        ; Get the byte at the Read Index
-        STX     BUFFER+0        ; Store the new Read Index
-        CLC                     ; Indicate success
-        BRA     BUFRD9          ; Clean up and return
-
-BUFRD8: SEC                     ; Indicate failure
-
-BUFRD9: PLX                     ; Restore X
-        RTS                     ; Return to caller
-
-; if [1]+1 == [0], the buffer is full
-; else [1]++, write to [1].
-
-; a = [1]+1
-; if a = [0] the buffer is full
-; else write to [1], [1] = a
+        STA     U_THR           ; Write the byte to the transmitter.
+        BRA     @DONE           ; We're done
+@EMPTY: LDA     #%00000010      ; Disable Transmitter Holding Register Empty Interrupt
+        TRB     U_IER           ; Reset the interrupt bit
 
 
+@DONE:  PLA                     ; Restore A
+        RTI                     ; Return from interrupt handler.
 
-BUFWR:  LDX     BUFFER+1        ; X = Write Index
-        PHX                     ; Push Write Index
-        INX                     ; Increment Write Index
-        BNE BUFWR1              ; If not zero, skip ahead
-        LDX #$02                ; Wrap around
-BUFWR1: PHX                     ; Transfer incremented Write Index
-        PLY                     ;   from X to Y
-        PLX                     ; Restore original Write Index
-        CPY BUFFER+0            ; Compare incremented index with read index
-        BEQ BUFWR8 ; full       ; If equal, the buffer is full, skip ahead.
-        STA BUFFER,X            ; Store the byte at the write index
-        STY BUFFER+1            ; Save the incremented write index
-        CLC                     ; Indicate success
-        RTS                     ; Return to caller
-BUFWR8: SEC                     ; Indicate failure
-BUFWR9: RTS                     ; Return to caller
-
-U_PUTS: PHY
-        LDY     $00
-        PHY
-        LDY     $01
-        PHY
-        PHA
-
-        STX     $00
-        STA     $01
-        LDY     #$00
-U_NEXT: LDA     ($00),Y
-        BEQ     RET
-        TAX
-        LDA     #$20
-U_WAIT: BIT     U_LSR
-        BEQ     U_WAIT
-        STX     U_THR
-        INY
-        BRA     U_NEXT
-
-RET:    PLA
-        PLY
-        STY     $01
-        PLY
-        STY     $00
-        PLY
-        RTS
-
+;
+; Overall interrupt handler
+;
+; Dispatch to Counter or UART interrupt service routine.
+;
 IRQ:
-        PHA
-        ; check the counter
-        BIT     C_CTRL
-        BVC     I_UART
-        JSR     C_INIT
-        LDA     C_CTRL          ; A = Counter control
-        ORA     #%00000101      ; set Counter Enable and Counter Interrupt bits
-        STA     C_CTRL          ; Store counter control
-        BRA     I_END
-I_UART:
-        STP
-        ; write string to buffer..
-        ; check the UART write interrupt
-        ; write character from buffer....
-I_END:  PLA
-NMI:    RTI
+        PHA                     ; Stash A
+        LDA     #%00000001      ; UART Interrupt Pending bit
+        BIT     U_IIR           ; Check the Interrupt Pending bit
+        BNE     @NOT_U          ; If not set, skip ahead
+        PLA                     ; Restore A
+        JMP     U_IRQ           ; Go to UART interrupt handler
+
+@NOT_U: PLA                     ; Restore A
+        BIT     C_CTRL          ; Check the counter interrupt flag
+        BVC     @NOT_C          ; if it's not set, skip ahead
+        JMP     C_IRQ           ; Go to the Counter interrupt handler
+
+@NOT_C: RTI                     ; It's something else, just return
+
+;
+; Not Maskable Interrupt
+;
+; No nothing.
+;
+NMI:    RTI                     ; Return from interrupt handler.
 
         .SEGMENT "RODATA"
 TICK:   .BYTE    "All work and no play makes Jack a dull boy.", $0D, $0A, 0
-
-        .SEGMENT "BSS"
-BUFFER: .RES $100
 
         .SEGMENT "VECTOR"
 V_NMI:  .WORD   NMI
