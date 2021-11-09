@@ -191,11 +191,11 @@ public enum AddressingMode {
     STACK_INTERRUPT("Stack", "",
       new Cycle(true, true, true,  Register.PC_INC, Register.OP,   true),
       new Cycle(true, true, false, Register.PC,     Register.IO,   true),
-      new Cycle(true, true, true,  Register.S_DEC,  Register.PCH,  true),
-      new Cycle(true, true, true,  Register.S_DEC,  Register.PCL,  true),
-      new Cycle(true, true, true,  Register.S,      Register.P,  true),
-      new Cycle(false,true, true,  Register.VAL,    Register.NEW_PCL, true),
-      new Cycle(false,true, true,  Register.VAH,    Register.NEW_PCH, true)
+      new Cycle(true, true, false,  Register.S_DEC,  Register.PCH,  false),
+      new Cycle(true, true, false,  Register.S_DEC,  Register.PCL,  false),
+      new Cycle(true, true, false,  Register.S_DEC,  Register.P,  false),
+      new Cycle(false,true, false,  Register.VAL,    Register.NEW_PCL, true),
+      new Cycle(false,true, false,  Register.VAH,    Register.NEW_PCH, true)
     ),
     STACK_BRK("Stack", "",
       new Cycle(true, true, true,  Register.PC_INC, Register.OP,   true),
