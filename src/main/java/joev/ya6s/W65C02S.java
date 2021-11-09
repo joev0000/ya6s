@@ -488,31 +488,24 @@ public class W65C02S {
     }
     if(eventType == Signal.EventType.NEGATIVE_EDGE) {
       cycleCount++;
-      //System.out.format("tick: %s %s[%d]%n", instructions[op & 0xFF], addressingModes[op & 0xFF], cycle);
       if(extraCycles != 0) {
+        sync.value(false);
         extraCycles--;
-        //System.out.format("tick: Burning extra cycle.%n");
         return;
       }
       if(!resb.value()) {
         cycleCount = 0;
         interruptMode = InterruptMode.RESET;
-        p |= INTERRUPT_DISABLE;
-        p &= ~DECIMAL;
-        //System.out.format("tick: resb is true, setting interruptMode to RESET, p to %02X%n", p);
       }
-      else if(!irqb.value()) {
+      else if(((p & INTERRUPT_DISABLE) == 0) && !irqb.value()) {
         interruptMode = InterruptMode.IRQ;
-        p |= INTERRUPT_DISABLE;
-        p &= ~DECIMAL;
       }
       if(be.value()) {
         data = (byte)dataBus.value(); // latch the data bus value.
-        //System.out.format("tick: latched data %02X from bus.%n", data);
       }
-      //System.out.format("tick: readRegister is %s%n", readRegister);
+      int opcode = op & 0xFF;
       switch(readRegister) {
-        case OP:  op = data; break;
+        case OP:  op = data; opcode = op & 0xFF; break;
         case AAL: aa = (short)((aa & 0xFF00) | (data & 0xFF)); break;
         case AAH: aa = (short)((aa & 0x00FF) | ((data & 0xFF) << 8)); break;
         case DO:  zp = data; break;
@@ -520,8 +513,8 @@ public class W65C02S {
         case NEW_PCH: new_pc = (short)((new_pc & 0x00FF) | ((data & 0xFF) << 8)); pc = new_pc; break;
         case P: p = (byte)(data | RESERVED); break;
         case DATA:
-          if(addressingModes[op & 0xFF] == RELATIVE) {
-            switch(instructions[op & 0xFF]) {
+          if(addressingModes[opcode] == RELATIVE) {
+            switch(instructions[opcode]) {
               case BPL: if((p & NEGATIVE) == 0) { pc += data; extraCycles++; } break;
               case BMI: if((p & NEGATIVE) != 0) { pc += data; extraCycles++; } break;
               case BVC: if((p & OVERFLOW) == 0) { pc += data; extraCycles++; } break;
@@ -536,7 +529,7 @@ public class W65C02S {
           }
           break;
         case IO: // Internal operation
-          switch(instructions[op & 0xFF]) {
+          switch(instructions[opcode]) {
             case CLC: p &= ~CARRY; break;
             case SEC: p |=  CARRY; break;
             case CLD: p &= ~DECIMAL; break;
@@ -557,12 +550,12 @@ public class W65C02S {
             case TXS: s = x; break; // TXS does not set NZ.
 
             case NOP: case XXX: break;
-            case ASL: if(addressingModes[op & 0xFF] == ACCUMULATOR) { a = doASL(a); } else { data = doASL(data); } break;
-            case ROL: if(addressingModes[op & 0xFF] == ACCUMULATOR) { a = doROL(a); } else { data = doROL(data); } break;
-            case LSR: if(addressingModes[op & 0xFF] == ACCUMULATOR) { a = doLSR(a); } else { data = doLSR(data); } break;
-            case ROR: if(addressingModes[op & 0xFF] == ACCUMULATOR) { a = doROR(a); } else { data = doROR(data); } break;
-            case INC: if(addressingModes[op & 0xFF] == ACCUMULATOR) { setNZ(++a); } else { setNZ(++data); } break;
-            case DEC: if(addressingModes[op & 0xFF] == ACCUMULATOR) { setNZ(--a); } else { setNZ(--data); } break;
+            case ASL: if(addressingModes[opcode] == ACCUMULATOR) { a = doASL(a); } else { data = doASL(data); } break;
+            case ROL: if(addressingModes[opcode] == ACCUMULATOR) { a = doROL(a); } else { data = doROL(data); } break;
+            case LSR: if(addressingModes[opcode] == ACCUMULATOR) { a = doLSR(a); } else { data = doLSR(data); } break;
+            case ROR: if(addressingModes[opcode] == ACCUMULATOR) { a = doROR(a); } else { data = doROR(data); } break;
+            case INC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(++a); } else { setNZ(++data); } break;
+            case DEC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(--a); } else { setNZ(--data); } break;
             case TRB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data &= ~a; break;
             case TSB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data |=  a; break;
 
@@ -582,7 +575,7 @@ public class W65C02S {
       }
       if(cycle == 0) {
         // do the previous op, if necessary..
-        switch(instructions[op & 0xFF]) {
+        switch(instructions[opcode]) {
           case LDA: case PLA:  a = data;  setNZ(a); break;
           case LDX: case PLX: x = data;  setNZ(x); break;
           case LDY: case PLY: y = data;  setNZ(y); break;
@@ -595,7 +588,7 @@ public class W65C02S {
           case PLP: p = (byte)((data | RESERVED) & ~BREAK); break;
           case BIT:
             p = (byte)((a & data) == 0 ? (p | ZERO) : p & ~ZERO);
-            if(addressingModes[op & 0xFF] != IMMEDIATE) {
+            if(addressingModes[opcode] != IMMEDIATE) {
               // BIT Immediate does not modify V or N.
               p = (byte)((data & 0x40) != 0 ? (p | OVERFLOW) : (p & ~OVERFLOW));
               p = (byte)((data & 0x80) != 0 ? (p | NEGATIVE) : (p & ~NEGATIVE));
@@ -634,13 +627,15 @@ public class W65C02S {
       else if(cycle == 1) {
         // previous cycle was an opcode read, make sure we have
         // the right cycles for the rest of the instruction.
-        cycles = interruptMode == InterruptMode.NONE ? addressingModes[op & 0xFF].cycles() : STACK_INTERRUPT.cycles();
-       //System.out.format("tick: PC: %04X op: %s, A: %02X, X: %02X, Y: %02X, S: %02X, P: %02X (%s)%n", (short)(pc-1), instructions[op & 0xFF], a, x, y, s, p, status());
+        cycles = interruptMode == InterruptMode.NONE ? addressingModes[opcode].cycles() : STACK_INTERRUPT.cycles();
+        if(interruptMode != InterruptMode.NONE) {
+          // Decrement the pc so the correct return address is pushed.
+          pc--;
+        }
+        // System.out.format("tick: PC: %04X op: %s, A: %02X, X: %02X, Y: %02X, S: %02X, P: %02X (%s) c: %d%n", (short)(pc-1), instructions[opcode], a, x, y, s, p, status(), cycleCount);
       }
 
-      //System.out.format("tick: %s %s, cycle[%d]: ", instructions[op & 0xFF], addressingModes[op & 0xFF], cycle);
       Cycle c = cycles[cycle];
-      //System.out.format("%s%n", c);
       vpb.value(c.vpb());
       mlb.value(c.mlb());
       sync.value(c.sync());
@@ -669,6 +664,10 @@ public class W65C02S {
              default -> (short)addressBus.value();
            }
         );
+        if(c.address() == Register.VAH) {
+          p |= INTERRUPT_DISABLE;
+          p &= ~DECIMAL;
+        }
       }
       if(c.rwb()) {
         readRegister = c.data();
@@ -676,7 +675,7 @@ public class W65C02S {
       else {
         readRegister = NULL;
         if(c.data() == DATA) {
-          switch (instructions[op & 0xFF]) {
+          switch (instructions[opcode]) {
             case STA, PHA -> data = a;
             case STX, PHX -> data = x;
             case STY, PHY -> data = y;
@@ -706,6 +705,8 @@ public class W65C02S {
       if(cycle == cycles.length) {
         cycle = 0;
         if(resb.value()) {
+          // TODO: This may not need to be done here, but when we check the
+          // interrupt status at the start of tick()
           interruptMode = InterruptMode.NONE;
         }
         if(op == 0) {
