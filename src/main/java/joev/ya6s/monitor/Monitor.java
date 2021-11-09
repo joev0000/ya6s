@@ -114,6 +114,8 @@ public class Monitor {
         Predicate<W65C02S> breakpoint = null;
         // At this point, the Continue command was used.
         out.println("(Ctrl-E to pause.)");
+        clock.value(true);
+        clock.value(false);
 
         // Cycle the clock until either the CPU is stopped, or if ^E is
         // entered in the console.
