@@ -13,7 +13,6 @@ import static joev.ya6s.smartline.Termios.*;
  * Smartline is a raw-mode command line helper tool, providing lightweight
  * interactive editing of commands.
  */
-@SuppressWarnings("SpellCheckingInspection")
 public class Smartline implements AutoCloseable {
   private final InputStream in;
   private final PrintStream out;
