@@ -92,15 +92,17 @@ public class Smartline implements AutoCloseable {
               case 0x1B: state = State.ESCAPE; break;
               case 0x9B: state = State.CSI; break;
               default:
-                if(cursor > sb.length()) {
-                  sb.append((char)c);
+                if(c > 0x1f) { // TODO: use control keys for editing?
+                  if(cursor > sb.length()) {
+                    sb.append((char)c);
+                  }
+                  else {
+                    out.format("%c%c", 0x9B, '@');
+                    sb.insert(cursor, (char)c);
+                  }
+                  out.print((char)c);
+                  cursor++;
                 }
-                else {
-                  out.format("%c%c", 0x9B, '@');
-                  sb.insert(cursor, (char)c);
-                }
-                out.print((char)c);
-                cursor++;
             }
             break;
           case ESCAPE:
