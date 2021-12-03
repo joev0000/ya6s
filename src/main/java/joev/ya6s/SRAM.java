@@ -14,9 +14,9 @@ public class SRAM {
   private final Signal rwb;
   private final Signal clock;
   private final Signal.Listener tickFn;
-  private final short maskedAddress;
-  private final short mask;
-  private final byte[] memory = new byte[0x10000];
+  private final int base;
+  private final int end;
+  private final byte[] memory;
 
   /**
    * Create a Static RAM module on the backplane that covers the entire
@@ -25,7 +25,7 @@ public class SRAM {
    * @param backplane the backplane to attach to.
    */
   public SRAM(Backplane backplane) {
-    this(backplane, (short)0, (short)0);
+    this(backplane, (short)0, 0x10000);
   }
 
   /**
@@ -33,12 +33,12 @@ public class SRAM {
    *
    * @param backplane the backplane to attach to.
    * @param baseAddress the base address of the SRAM.
-   * @param mask the address mask of the SRAM.
+   * @param size the size of the SRAM.
    */
-  public SRAM(Backplane backplane, short baseAddress, short mask) {
+  public SRAM(Backplane backplane, short baseAddress, int size) {
     this(backplane, Map.of(
       "base", Integer.toHexString(baseAddress & 0xFFFF),
-      "mask", Integer.toHexString(mask & 0xFFFF)));
+      "size", Integer.toHexString(size)));
   }
   /**
    * Create a Static RAM module with the given busses and signals.
@@ -46,25 +46,26 @@ public class SRAM {
    * @param backplane the backplane to attach to.
    * @param options a Map containing the configuration options:
    *   "base" is the hex value of the base address.
-   *   "mask" is the hex value of the address mask.
+   *   "size" is the hex value of the size.
    */
   public SRAM(Backplane backplane, Map<String, String> options) {
     String baseString = options.get("base");
-    String maskString = options.get("mask");
+    String sizeString = options.get("size");
 
-    if(baseString == null || maskString == null) {
-      throw new IllegalArgumentException("Both \"base\" and \"mask\" options are required.");
+    if(baseString == null || sizeString == null) {
+      throw new IllegalArgumentException("Both \"base\" and \"size\" options are required.");
     }
 
-    short base = (short)Integer.parseUnsignedInt(baseString, 16);
-    short mask = (short)Integer.parseUnsignedInt(maskString, 16);
+    base = Integer.parseUnsignedInt(baseString, 16);
+    int size = Integer.parseUnsignedInt(sizeString, 16);
 
     address = backplane.address();
     data = backplane.data();
     rwb = backplane.rwb();
     clock = backplane.clock();
-    this.mask = mask;
-    this.maskedAddress = (short)(base & mask);
+    this.end = base + size - 1;
+
+    memory = new byte[size];
 
     tickFn = this::tick;
     clock.register(tickFn);
@@ -77,13 +78,13 @@ public class SRAM {
    */
   private void tick(Signal.EventType eventType) {
     if(eventType == Signal.EventType.POSITIVE_EDGE) {
-      short busAddress = (short)address.value();
-      if((short)(busAddress & mask) == maskedAddress) {
+      int busAddress = address.value() & 0xFFFF;
+      if(busAddress >= base && busAddress <= end) {
         if(rwb.value()) {
-          data.value(memory[busAddress & 0xFFFF]);
+          data.value(memory[busAddress - base]);
         }
         else {
-          memory[busAddress & 0xFFFF] = (byte)data.value();
+          memory[busAddress - base] = (byte)data.value();
         }
       }
     }
