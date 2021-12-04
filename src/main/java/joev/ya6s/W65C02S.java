@@ -649,12 +649,12 @@ public class W65C02S {
              case AA_X -> aa + (x & 0xFF);
              case AA_X_1 -> aa + (x & 0xFF) + 1;
              case AA_INC -> aa++;
-             case DO -> zp;
-             case DO_INC -> zp++;
-             case DO_X -> zp + x;
-             case DO_Y -> zp + y;
-             case DO_X_1 -> zp + x + 1;
-             case DO_X_INC -> zp++ + x;
+             case DO -> zp & 0xFF;
+             case DO_INC -> zp++ & 0xFF;
+             case DO_X -> (zp + x) & 0xFF;
+             case DO_Y -> (zp + y) & 0xFF;
+             case DO_X_1 -> (zp + x + 1) & 0xFF;
+             case DO_X_INC -> (zp++ + x) & 0xFF;
              case AA_Y -> aa + (y & 0xFF);
              case S -> (short)(0x100 | (s & 0xFF));
              case S_INC -> (short)(0x100 | (++s & 0xFF));
