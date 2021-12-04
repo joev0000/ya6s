@@ -18,9 +18,8 @@ public class ROM {
   private final Signal rwb;
   private final Signal clock;
   private final Signal.Listener tickFn;
-  private final short maskedAddress;
-  private final short mask;
-  private final short base;
+  private final int base;
+  private final int end;
   private final byte[] memory;
 
   /**
@@ -29,16 +28,16 @@ public class ROM {
    * @param backplane the backplane to attach to.
    * @param options a Map containing the configuration options:
    *   "base" is the hex value of the base address.
-   *   "mask" is the hex value of the address mask.
+   *   "size" is the size of the ROM.
    *   "file" is the path to the contents that will be loaded into the ROM.
    */
   public ROM(Backplane backplane, Map<String, String> options) {
     String baseString = options.get("base");
-    String maskString = options.get("mask");
+    String sizeString = options.get("size");
     String fileName   = options.get("file");
 
-    if(baseString == null || maskString == null) {
-      throw new IllegalArgumentException("Both \"base\" and \"mask\" options are required.");
+    if(baseString == null || sizeString == null) {
+      throw new IllegalArgumentException("Both \"base\" and \"size\" options are required.");
     }
 
     Path path = Path.of(fileName);
@@ -52,16 +51,14 @@ public class ROM {
       throw new IllegalArgumentException("Could not read file.");
     }
 
-    short base = (short)Integer.parseUnsignedInt(baseString, 16);
-    short mask = (short)Integer.parseUnsignedInt(maskString, 16);
+    base = Integer.parseUnsignedInt(baseString, 16);
+    int size = Integer.parseUnsignedInt(sizeString, 16);
 
     address = backplane.address();
     data = backplane.data();
     rwb = backplane.rwb();
     clock = backplane.clock();
-    this.base = base;
-    this.mask = mask;
-    this.maskedAddress = (short)(base & mask);
+    this.end = base + size - 1;
 
     tickFn = this::tick;
     clock.register(tickFn);
@@ -74,9 +71,9 @@ public class ROM {
    */
   private void tick(Signal.EventType eventType) {
     if(eventType == Signal.EventType.POSITIVE_EDGE) {
-      short busAddress = (short)address.value();
-      if(rwb.value() && (short)(busAddress & mask) == maskedAddress) {
-        data.value(memory[(busAddress - base) & 0xFFFF]);
+      int busAddress = address.value() & 0xFFFF;
+      if(rwb.value() && busAddress >= base && busAddress <= end) {
+        data.value(memory[busAddress - base]);
       }
     }
   }
