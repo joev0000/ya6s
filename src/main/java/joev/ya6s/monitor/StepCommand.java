@@ -37,6 +37,7 @@ public class StepCommand implements Command {
     Signal clock = backplane.clock();
     boolean synced = false;
     while(!cpu.stopped() && !synced) { // or hit a breakpoint
+      monitor.updateProfile();
       clock.value(true);
       clock.value(false);
       synced = sync.value();

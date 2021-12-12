@@ -32,12 +32,15 @@ TOKEN [IGNORE_CASE]: {
   <CONT:  "c" | "cont"> |
   <STEP:  "s" | "step"> |
   <LOAD:  "l" | "load"> |
+  <PROFILE: "p" | "profile"> |
   <ATTACH: "a" | "attach">: S_ATTACH |
   <BREAK: "b" | "break">: S_BREAK |
-  <RESET:       "reset">
+  <RESET:       "reset"> |
+  <SHOW:  "show">
 }
 
 TOKEN: {
+  <DECIMAL_NUMBER: (["0"-"9"])+> |
   <HEX_NUMBER: (["0"-"9","A"-"F","a"-"f"])+> |
   <LETTER: ["A"-"Z","a"-"z"]> |
   <FILENAME_CHAR: <LETTER> | ["0"-"9","!"-"/",":"-"@","["-"`","{"-"~"]> |
@@ -300,6 +303,8 @@ Command command(): { Command c = null; }
     c = load() |
     c = attach() |
     c = reset() |
+    LOOKAHEAD(2) c = profileShow() |
+    LOOKAHEAD(2) c = profileReset() |
     LOOKAHEAD(2) c = breakWhen() |
     LOOKAHEAD(2) c = breakAt() |
     LOOKAHEAD(2) c = breakList() |
@@ -374,6 +379,25 @@ Command load(): {
 }
 {
   <LOAD> start=<HEX_NUMBER> path=<FILENAME> <EOF> { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
+}
+
+Command profileShow(): {
+  Token maxLines = null;
+}
+{
+  <PROFILE> <SHOW> (maxLines=<DECIMAL_NUMBER>)? <EOF> {
+    int max = Integer.MAX_VALUE;
+    if(maxLines != null) {
+      max = Integer.parseInt(maxLines.image, 10);
+    }
+    return new ProfileShowCommand(max);
+  }
+}
+
+Command profileReset(): {
+}
+{
+  <PROFILE> <RESET> <EOF> { return ProfileResetCommand.instance(); }
 }
 
 Command attach(): {

@@ -24,6 +24,10 @@ public class Monitor {
   private final OutputStream console;
   private final List<Predicate<W65C02S>> breakpoints = new ArrayList<>();
 
+  private long profile[] = new long[65536];
+  private short profilePC;
+  private final Signal.Listener syncFn = this::sync;
+
   public static InputStream ttyIn;
   public static OutputStream ttyOut;
 
@@ -40,6 +44,19 @@ public class Monitor {
     this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
     this.console = console;
     sl = new Smartline(in, out);
+
+    backplane.sync().register(syncFn);
+  }
+
+  /**
+   * Update the profile program counter on instruction load cycles.
+   *
+   * @param eventType the edge type of the sync signal.
+   */
+  private void sync(Signal.EventType eventType) {
+    if(eventType == Signal.EventType.POSITIVE_EDGE) {
+      profilePC = cpu.pc();
+    }
   }
 
   /**
@@ -89,6 +106,31 @@ public class Monitor {
   }
 
   /**
+   * Get the profiling data.
+   *
+   * @return the profile cycle count metric array.
+   */
+  public long[] profile() {
+    return profile;
+  }
+
+  /**
+   * Update the profiling data with the current profile PC.
+   */
+  public void updateProfile() {
+    profile[profilePC & 0xFFFF]++;
+  }
+
+  /**
+   * Reset the profiling data.
+   */
+  public void profileReset() {
+    for(int i = 0; i < profile.length; i++) {
+      profile[i] = 0;
+    }
+  }
+
+  /**
    * Run the monitor loop.  Never exits.
    */
   public void run() {
@@ -114,6 +156,7 @@ public class Monitor {
         Predicate<W65C02S> breakpoint = null;
         // At this point, the Continue command was used.
         out.println("(Ctrl-E to pause.)");
+        updateProfile();
         clock.value(true);
         clock.value(false);
 
@@ -133,6 +176,7 @@ public class Monitor {
             break;
           }
           if(c >= 0) console.write(c);
+          updateProfile();
           clock.value(true);
           clock.value(false);
         }
@@ -141,6 +185,7 @@ public class Monitor {
         // until the next SYNC pulse- to make sure the entire instruction
         // has been executed.
         while(!sync.value()) {
+          updateProfile();
           clock.value(true);
           clock.value(false);
         }
