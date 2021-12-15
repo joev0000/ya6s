@@ -331,7 +331,7 @@ Command read(): {
   Token end = null;
 }
 {
-  <READ> start=<HEX_NUMBER> (end=<HEX_NUMBER>)? <EOF> {
+  <READ> (start=<HEX_NUMBER>|start=<DECIMAL_NUMBER>) ( (end=<HEX_NUMBER>|end=<DECIMAL_NUMBER>))? <EOF> {
     ReadCommand cmd;
     if(end != null) {
       cmd = new ReadCommand(
@@ -351,8 +351,8 @@ Command write(): {
   List<Integer> list = new ArrayList<>();
 }
 {
-  <WRITE> t=<HEX_NUMBER> { start = Integer.parseInt(t.image, 16); }
-  ( t=<HEX_NUMBER> { list.add(Integer.parseInt(t.image, 16)); } )* <EOF>
+  <WRITE> (t=<HEX_NUMBER>|t=<DECIMAL_NUMBER>) { start = Integer.parseInt(t.image, 16); }
+  ( (t=<HEX_NUMBER>|t=<DECIMAL_NUMBER>) { list.add(Integer.parseInt(t.image, 16)); } )* <EOF>
   {
     byte[] data = new byte[list.size()];
     int i = 0;
@@ -378,7 +378,7 @@ Command load(): {
   Token path;
 }
 {
-  <LOAD> start=<HEX_NUMBER> path=<FILENAME> <EOF> { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
+  <LOAD> (start=<HEX_NUMBER>|start=<DECIMAL_NUMBER>) path=<FILENAME> <EOF> { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
 }
 
 Command profileShow(): {
