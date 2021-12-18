@@ -483,235 +483,250 @@ public class W65C02S {
 
   // tick:
   public void tick(Signal.EventType eventType) {
-    if(stopped && resb.value()) {
+    // If this is a positive edge, or if the processor is stopped,
+    // and we're not resetting, return.
+    if(eventType == Signal.EventType.POSITIVE_EDGE || (stopped && resb.value())) {
       return;
     }
-    if(eventType == Signal.EventType.NEGATIVE_EDGE) {
-      cycleCount++;
-      if(extraCycles != 0) {
-        sync.value(false);
-        extraCycles--;
-        return;
-      }
-      if(!resb.value()) {
-        cycleCount = 0;
-        interruptMode = InterruptMode.RESET;
-      }
-      else if(((p & INTERRUPT_DISABLE) == 0) && !irqb.value()) {
-        interruptMode = InterruptMode.IRQ;
-      }
-      if(be.value()) {
-        data = (byte)dataBus.value(); // latch the data bus value.
-      }
-      int opcode = op & 0xFF;
-      switch(readRegister) {
-        case OP:  op = data; opcode = op & 0xFF; break;
-        case AAL: aa = (short)((aa & 0xFF00) | (data & 0xFF)); break;
-        case AAH: aa = (short)((aa & 0x00FF) | ((data & 0xFF) << 8)); break;
-        case DO:  zp = data; break;
-        case NEW_PCL: new_pc = (short)((new_pc & 0xFF00) | (data & 0xFF)); break;
-        case NEW_PCH: new_pc = (short)((new_pc & 0x00FF) | ((data & 0xFF) << 8)); pc = new_pc; break;
-        case P: p = (byte)(data | RESERVED); break;
-        case DATA:
-          if(addressingModes[opcode] == RELATIVE) {
-            switch(instructions[opcode]) {
-              case BPL: if((p & NEGATIVE) == 0) { pc += data; extraCycles++; } break;
-              case BMI: if((p & NEGATIVE) != 0) { pc += data; extraCycles++; } break;
-              case BVC: if((p & OVERFLOW) == 0) { pc += data; extraCycles++; } break;
-              case BVS: if((p & OVERFLOW) != 0) { pc += data; extraCycles++; } break;
-              case BCC: if((p & CARRY)    == 0) { pc += data; extraCycles++; } break;
-              case BCS: if((p & CARRY)    != 0) { pc += data; extraCycles++; } break;
-              case BNE: if((p & ZERO)     == 0) { pc += data; extraCycles++; } break;
-              case BEQ: if((p & ZERO)     != 0) { pc += data; extraCycles++; } break;
-              case BRA:                         { pc += data; extraCycles++; } break;
-              default:
-            }
-          }
-          break;
-        case IO: // Internal operation
+
+    // Increment cyclc counter
+    cycleCount++;
+
+    // If we need to inject an extra cycle, return.
+    if(extraCycles != 0) {
+      sync.value(false);
+      extraCycles--;
+      return;
+    }
+
+    // Set the interrupt mode if we're resetting or interrupted
+    if(!resb.value()) {
+      cycleCount = 0;
+      interruptMode = InterruptMode.RESET;
+    }
+    else if(((p & INTERRUPT_DISABLE) == 0) && !irqb.value()) {
+      interruptMode = InterruptMode.IRQ;
+    }
+
+    // If the bus is enabled, latch the data bus value.
+    if(be.value()) {
+      data = (byte)dataBus.value();
+    }
+
+    int opcode = op & 0xFF;
+
+    // Store the data bus value from the previous cycle
+    switch(readRegister) {
+      case OP:  op = data; opcode = op & 0xFF; break;
+      case AAL: aa = (short)((aa & 0xFF00) | (data & 0xFF)); break;
+      case AAH: aa = (short)((aa & 0x00FF) | ((data & 0xFF) << 8)); break;
+      case DO:  zp = data; break;
+      case NEW_PCL: new_pc = (short)((new_pc & 0xFF00) | (data & 0xFF)); break;
+      case NEW_PCH: new_pc = (short)((new_pc & 0x00FF) | ((data & 0xFF) << 8)); pc = new_pc; break;
+      case P: p = (byte)(data | RESERVED); break;
+      case DATA:
+        // If we're reading the data for a brancing instruction, make
+        // the branching decision here.
+        // TODO: Add an extra cycle if pc crosses a page boundary.
+        if(addressingModes[opcode] == RELATIVE) {
           switch(instructions[opcode]) {
-            case CLC: p &= ~CARRY; break;
-            case SEC: p |=  CARRY; break;
-            case CLD: p &= ~DECIMAL; break;
-            case SED: p |=  DECIMAL; break;
-            case CLI: p &= ~INTERRUPT_DISABLE; break;
-            case SEI: p |=  INTERRUPT_DISABLE; break;
-            case CLV: p &= ~OVERFLOW; break;
-            case DEX: x--; setNZ(x); break;
-            case DEY: y--; setNZ(y); break;
-            case INX: x++; setNZ(x); break;
-            case INY: y++; setNZ(y); break;
-
-            case TAX: x = a; setNZ(x); break;
-            case TAY: y = a; setNZ(y); break;
-            case TXA: a = x; setNZ(a); break;
-            case TYA: a = y; setNZ(a); break;
-            case TSX: x = s; setNZ(x); break;
-            case TXS: s = x; break; // TXS does not set NZ.
-
-            case NOP: case XXX: break;
-            case ASL: if(addressingModes[opcode] == ACCUMULATOR) { a = doASL(a); } else { data = doASL(data); } break;
-            case ROL: if(addressingModes[opcode] == ACCUMULATOR) { a = doROL(a); } else { data = doROL(data); } break;
-            case LSR: if(addressingModes[opcode] == ACCUMULATOR) { a = doLSR(a); } else { data = doLSR(data); } break;
-            case ROR: if(addressingModes[opcode] == ACCUMULATOR) { a = doROR(a); } else { data = doROR(data); } break;
-            case INC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(++a); } else { setNZ(++data); } break;
-            case DEC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(--a); } else { setNZ(--data); } break;
-            case TRB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data &= ~a; break;
-            case TSB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data |=  a; break;
-
-            case BBR: branch = (data & (1 << ((op >> 4) & 0x07))) == 0; break;
-            case BBS: branch = (data & (1 << ((op >> 4) & 0x07))) != 0; break;
-
-            case RMB: data = (byte)(data & ~(1<<((op >> 4) & 0x07))); break;
-            case SMB: data = (byte)(data |  (1<<((op >> 4) & 0x07))); break;
-
-            case RTS: pc++; break;  // or preincrement???
-            case STP: stopped = true; break;
-            case BRK: if(interruptMode == InterruptMode.NONE) interruptMode = InterruptMode.IRQ; break;
+            case BPL: if((p & NEGATIVE) == 0) { pc += data; extraCycles++; } break;
+            case BMI: if((p & NEGATIVE) != 0) { pc += data; extraCycles++; } break;
+            case BVC: if((p & OVERFLOW) == 0) { pc += data; extraCycles++; } break;
+            case BVS: if((p & OVERFLOW) != 0) { pc += data; extraCycles++; } break;
+            case BCC: if((p & CARRY)    == 0) { pc += data; extraCycles++; } break;
+            case BCS: if((p & CARRY)    != 0) { pc += data; extraCycles++; } break;
+            case BNE: if((p & ZERO)     == 0) { pc += data; extraCycles++; } break;
+            case BEQ: if((p & ZERO)     != 0) { pc += data; extraCycles++; } break;
+            case BRA:                         { pc += data; extraCycles++; } break;
             default:
           }
-          break;
-        default:
-      }
-      if(cycle == 0) {
-        // do the previous op, if necessary..
+        }
+        break;
+      case IO: // Internal operation
         switch(instructions[opcode]) {
-          case LDA: case PLA:  a = data;  setNZ(a); break;
-          case LDX: case PLX: x = data;  setNZ(x); break;
-          case LDY: case PLY: y = data;  setNZ(y); break;
-          case ORA: a |= data; setNZ(a); break;
-          case AND: a &= data; setNZ(a); break;
-          case EOR: a ^= data; setNZ(a); break;
-          case CMP: setNZ((byte)(a - data)); setC((a & 0xFF) >= (data & 0xFF)); break;
-          case CPX: setNZ((byte)(x - data)); setC((x & 0xFF) >= (data & 0xFF)); break;
-          case CPY: setNZ((byte)(y - data)); setC((y & 0xFF) >= (data & 0xFF)); break;
-          case PLP: p = (byte)((data | RESERVED) & ~BREAK); break;
-          case BIT:
-            p = (byte)((a & data) == 0 ? (p | ZERO) : p & ~ZERO);
-            if(addressingModes[opcode] != IMMEDIATE) {
-              // BIT Immediate does not modify V or N.
-              p = (byte)((data & 0x40) != 0 ? (p | OVERFLOW) : (p & ~OVERFLOW));
-              p = (byte)((data & 0x80) != 0 ? (p | NEGATIVE) : (p & ~NEGATIVE));
-            }
-            break;
-          case ADC: {
-              byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
-              if((p & DECIMAL) == 0) {
-                setCV(a, data, c);
-                a += data + c;
-              }
-              else {
-                doADCDecimal(data, c);
-              }
-              setNZ(a);
-            }
-            break;
-          case SBC: {
-              byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
-              if((p & DECIMAL) == 0) {
-                setCV(a, (byte)(~data), c);
-                a += (byte)(~data) + c;
-              }
-              else {
-                doSBCDecimal(data, c);
-              }
-            }
-            setNZ(a);
-            break;
-          case BBS:
-          case BBR:
-            if(branch) pc+=data; break;
+          case CLC: p &= ~CARRY; break;
+          case SEC: p |=  CARRY; break;
+          case CLD: p &= ~DECIMAL; break;
+          case SED: p |=  DECIMAL; break;
+          case CLI: p &= ~INTERRUPT_DISABLE; break;
+          case SEI: p |=  INTERRUPT_DISABLE; break;
+          case CLV: p &= ~OVERFLOW; break;
+          case DEX: x--; setNZ(x); break;
+          case DEY: y--; setNZ(y); break;
+          case INX: x++; setNZ(x); break;
+          case INY: y++; setNZ(y); break;
+
+          case TAX: x = a; setNZ(x); break;
+          case TAY: y = a; setNZ(y); break;
+          case TXA: a = x; setNZ(a); break;
+          case TYA: a = y; setNZ(a); break;
+          case TSX: x = s; setNZ(x); break;
+          case TXS: s = x; break; // TXS does not set NZ.
+
+          case NOP: case XXX: break;
+          case ASL: if(addressingModes[opcode] == ACCUMULATOR) { a = doASL(a); } else { data = doASL(data); } break;
+          case ROL: if(addressingModes[opcode] == ACCUMULATOR) { a = doROL(a); } else { data = doROL(data); } break;
+          case LSR: if(addressingModes[opcode] == ACCUMULATOR) { a = doLSR(a); } else { data = doLSR(data); } break;
+          case ROR: if(addressingModes[opcode] == ACCUMULATOR) { a = doROR(a); } else { data = doROR(data); } break;
+          case INC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(++a); } else { setNZ(++data); } break;
+          case DEC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(--a); } else { setNZ(--data); } break;
+          case TRB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data &= ~a; break;
+          case TSB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data |=  a; break;
+
+          case BBR: branch = (data & (1 << ((op >> 4) & 0x07))) == 0; break;
+          case BBS: branch = (data & (1 << ((op >> 4) & 0x07))) != 0; break;
+
+          case RMB: data = (byte)(data & ~(1<<((op >> 4) & 0x07))); break;
+          case SMB: data = (byte)(data |  (1<<((op >> 4) & 0x07))); break;
+
+          case RTS: pc++; break;
+          case STP: stopped = true; break;
+          // case WAI: waiting = true; break;
+          case BRK: if(interruptMode == InterruptMode.NONE) interruptMode = InterruptMode.IRQ; break;
           default:
         }
-      }
-      else if(cycle == 1) {
-        // previous cycle was an opcode read, make sure we have
-        // the right cycles for the rest of the instruction.
-        cycles = interruptMode == InterruptMode.NONE ? addressingModes[opcode].cycles() : STACK_INTERRUPT.cycles();
-        if(interruptMode != InterruptMode.NONE) {
-          // Decrement the pc so the correct return address is pushed.
-          pc--;
-        }
-        // System.out.format("tick: PC: %04X op: %s, A: %02X, X: %02X, Y: %02X, S: %02X, P: %02X (%s) c: %d%n", (short)(pc-1), instructions[opcode], a, x, y, s, p, status(), cycleCount);
-      }
-
-      Cycle c = cycles[cycle];
-      vpb.value(c.vpb());
-      mlb.value(c.mlb());
-      sync.value(c.sync());
-      rwb.value(c.rwb());
-      if(be.value()) {
-        addressBus.value(
-           switch(c.address()) {
-             case PC_INC -> pc++;
-             case PC -> pc;
-             case AA -> aa;
-             case AA_X -> aa + (x & 0xFF);
-             case AA_X_1 -> aa + (x & 0xFF) + 1;
-             case AA_INC -> aa++;
-             case DO -> zp & 0xFF;
-             case DO_INC -> zp++ & 0xFF;
-             case DO_X -> (zp + x) & 0xFF;
-             case DO_Y -> (zp + y) & 0xFF;
-             case DO_X_1 -> (zp + x + 1) & 0xFF;
-             case DO_X_INC -> (zp++ + x) & 0xFF;
-             case AA_Y -> aa + (y & 0xFF);
-             case S -> (short)(0x100 | (s & 0xFF));
-             case S_INC -> (short)(0x100 | (++s & 0xFF));
-             case S_DEC -> (short)(0x100 | (s-- & 0xFF));
-             case VAL -> interruptMode.vector();
-             case VAH -> interruptMode.vector() + 1;
-             default -> (short)addressBus.value();
-           }
-        );
-        if(c.address() == Register.VAH) {
-          p |= INTERRUPT_DISABLE;
-          p &= ~DECIMAL;
-        }
-      }
-      if(c.rwb()) {
-        readRegister = c.data();
-      }
-      else {
-        readRegister = NULL;
-        if(c.data() == DATA) {
-          switch (instructions[opcode]) {
-            case STA, PHA -> data = a;
-            case STX, PHX -> data = x;
-            case STY, PHY -> data = y;
-            case STZ -> data = 0;
-            case PHP -> data = (byte) (p | BREAK);
-            case BRK -> {
-              data = (byte) (p | BREAK);
-              p &= ~DECIMAL;
+        break;
+      default:
+    }
+    if(cycle == 0) {
+      // do the previous ALU op, if necessary..
+      switch(instructions[opcode]) {
+        case LDA: case PLA: a = data;  setNZ(a); break;
+        case LDX: case PLX: x = data;  setNZ(x); break;
+        case LDY: case PLY: y = data;  setNZ(y); break;
+        case ORA: a |= data; setNZ(a); break;
+        case AND: a &= data; setNZ(a); break;
+        case EOR: a ^= data; setNZ(a); break;
+        case CMP: setNZ((byte)(a - data)); setC((a & 0xFF) >= (data & 0xFF)); break;
+        case CPX: setNZ((byte)(x - data)); setC((x & 0xFF) >= (data & 0xFF)); break;
+        case CPY: setNZ((byte)(y - data)); setC((y & 0xFF) >= (data & 0xFF)); break;
+        case PLP: p = (byte)((data | RESERVED) & ~BREAK); break;
+        case BIT:
+          p = (byte)((a & data) == 0 ? (p | ZERO) : p & ~ZERO);
+          if(addressingModes[opcode] != IMMEDIATE) {
+            // BIT Immediate does not modify V or N.
+            p = (byte)((data & 0x40) != 0 ? (p | OVERFLOW) : (p & ~OVERFLOW));
+            p = (byte)((data & 0x80) != 0 ? (p | NEGATIVE) : (p & ~NEGATIVE));
+          }
+          break;
+        case ADC: {
+            byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
+            if((p & DECIMAL) == 0) {
+              setCV(a, data, c);
+              a += data + c;
             }
-            default -> {
+            else {
+              doADCDecimal(data, c);
+            }
+            setNZ(a);
+          }
+          break;
+        case SBC: {
+            byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
+            if((p & DECIMAL) == 0) {
+              setCV(a, (byte)(~data), c);
+              a += (byte)(~data) + c;
+            }
+            else {
+              doSBCDecimal(data, c);
             }
           }
-        }
-        if(be.value()) {
-          dataBus.value(
-            switch(c.data()) {
-              case DATA -> data;
-              case PCH -> (pc >> 8) & 0xFF;
-              case PCL -> pc & 0xFF;
-              case P -> p;
-              default -> -1; // TODO fix this.
-            }
-          );
+          setNZ(a);
+          break;
+        case BBS:
+        case BBR:
+          if(branch) pc+=data; break;
+        default:
+      }
+    }
+    else if(cycle == 1) {
+      // previous cycle was an opcode read, make sure we have
+      // the right cycles for the rest of the instruction.
+      cycles = interruptMode == InterruptMode.NONE ? addressingModes[opcode].cycles() : STACK_INTERRUPT.cycles();
+      if(interruptMode != InterruptMode.NONE) {
+        // Decrement the pc so the correct return address is pushed.
+        pc--;
+      }
+      // System.out.format("tick: PC: %04X op: %s, A: %02X, X: %02X, Y: %02X, S: %02X, P: %02X (%s) c: %d%n", (short)(pc-1), instructions[opcode], a, x, y, s, p, status(), cycleCount);
+    }
+
+    Cycle c = cycles[cycle];
+    vpb.value(c.vpb());
+    mlb.value(c.mlb());
+    sync.value(c.sync());
+    rwb.value(c.rwb());
+    if(be.value()) {
+      addressBus.value(
+         switch(c.address()) {
+           case PC_INC -> pc++;
+           case PC -> pc;
+           case AA -> aa;
+           case AA_X -> aa + (x & 0xFF);
+           case AA_X_1 -> aa + (x & 0xFF) + 1;
+           case AA_INC -> aa++;
+           case DO -> zp & 0xFF;
+           case DO_INC -> zp++ & 0xFF;
+           case DO_X -> (zp + x) & 0xFF;
+           case DO_Y -> (zp + y) & 0xFF;
+           case DO_X_1 -> (zp + x + 1) & 0xFF;
+           case DO_X_INC -> (zp++ + x) & 0xFF;
+           case AA_Y -> aa + (y & 0xFF);
+           case S -> (short)(0x100 | (s & 0xFF));
+           case S_INC -> (short)(0x100 | (++s & 0xFF));
+           case S_DEC -> (short)(0x100 | (s-- & 0xFF));
+           case VAL -> interruptMode.vector();
+           case VAH -> interruptMode.vector() + 1;
+           default -> (short)addressBus.value();
+         }
+      );
+      if(c.address() == Register.VAH) {
+        p |= INTERRUPT_DISABLE;
+        p &= ~DECIMAL;
+      }
+    }
+    if(c.rwb()) {
+      readRegister = c.data();
+    }
+    else {
+      readRegister = NULL;
+      if(c.data() == DATA) {
+        switch (instructions[opcode]) {
+          case STA, PHA -> data = a;
+          case STX, PHX -> data = x;
+          case STY, PHY -> data = y;
+          case STZ -> data = 0;
+          case PHP -> data = (byte) (p | BREAK);
+          case BRK -> {
+            data = (byte) (p | BREAK);
+            p &= ~DECIMAL;
+          }
+          default -> {
+          }
         }
       }
-      cycle++;
-      if(cycle == cycles.length) {
-        cycle = 0;
-        if(resb.value()) {
-          // TODO: This may not need to be done here, but when we check the
-          // interrupt status at the start of tick()
-          interruptMode = InterruptMode.NONE;
-        }
-        if(op == 0) {
-          p |= INTERRUPT_DISABLE;
-        }
+      if(be.value()) {
+        dataBus.value(
+          switch(c.data()) {
+            case DATA -> data;
+            case PCH -> (pc >> 8) & 0xFF;
+            case PCL -> pc & 0xFF;
+            case P -> p;
+            default -> -1; // TODO fix this.
+          }
+        );
+      }
+    }
+    cycle++;
+    if(cycle == cycles.length) {
+      cycle = 0;
+      if(resb.value()) {
+        // TODO: This may not need to be done here, but when we check the
+        // interrupt status at the start of tick()
+        interruptMode = InterruptMode.NONE;
+      }
+      if(op == 0) { // BRK
+        p |= INTERRUPT_DISABLE;
       }
     }
   }
