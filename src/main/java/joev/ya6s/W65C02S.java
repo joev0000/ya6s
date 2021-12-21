@@ -447,13 +447,11 @@ public class W65C02S {
    * Set the Carry and Overflow flags based on the sum of two bytes
    * and the existing Carry flag.  Used during addition and subtraction.
    *
-   * TODO: Remove carry as an argument, get it from the flags.
-   *
    * @param a the first byte
    * @param b the second byte
-   * @param carry the value of the carry flag.
    */
-  private void setCV(byte a, byte b, byte carry) {
+  private void setCV(byte a, byte b) {
+    int carry = ((p & CARRY) != 0) ? 1 : 0;
     byte c = (byte)(a + b + carry);
     p = (byte)(((((a & b) | ((a ^ b) & ~c)) & 0x80) != 0) ? (p | CARRY)    : (p & ~CARRY));
     p = (byte)(((((a ^ c) & (b ^ c))        & 0x80) != 0) ? (p | OVERFLOW) : (p & ~OVERFLOW));
@@ -513,13 +511,13 @@ public class W65C02S {
   /**
    * Perform a BCD addition.
    *
-   * TODO: get the carry flag value from the status.
    * TODO: Set the N and V flags.
    *
    * @param data the byte to add to the accumulator
    * @param c the carry flag value
    */
-  private void doADCDecimal(byte data, byte c) {
+  private void doADCDecimal(byte data) {
+    int c = ((p & CARRY) != 0) ? 1 : 0;
     byte lo = (byte)(((a & 0x0F) + (data & 0x0F) + c) & 0xFF);
     c = 0;
     if(lo > 9) { lo += 6; lo &= 0x0F; c++; }
@@ -531,13 +529,12 @@ public class W65C02S {
   /**
    * Perform a BCD subtraction..
    *
-   * TODO: get the carry flag value from the status.
    * TODO: Set the N and V flags.
    *
    * @param data the byte to add to the accumulator
-   * @param c the carry flag value
    */
-  private void doSBCDecimal(byte data, byte c) {
+  private void doSBCDecimal(byte data) {
+    int c = ((p & CARRY) != 0) ? 1 : 0;
     byte lo = (byte)(((a & 0x0F) - (data & 0x0F) - 1 + c) & 0xFF);
     c = 0;
     if(lo < 0) { lo += 10; lo &= 0x0F; c++; }
@@ -596,7 +593,6 @@ public class W65C02S {
       case DATA:
         // If we're reading the data for a brancing instruction, make
         // the branching decision here.
-        // TODO: Add an extra cycle if pc crosses a page boundary.
         if(addressingModes[opcode] == RELATIVE) {
           byte page = (byte)((pc >> 8) & 0xFF);
           switch(instructions[opcode]) {
@@ -686,27 +682,27 @@ public class W65C02S {
           }
           break;
         case ADC: {
-            byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
             if((p & DECIMAL) == 0) {
-              setCV(a, data, c);
+              byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
+              setCV(a, data);
               a += data + c;
             }
             else {
               extraCycles++;
-              doADCDecimal(data, c);
+              doADCDecimal(data);
             }
             setNZ(a);
           }
           break;
         case SBC: {
-            byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
             if((p & DECIMAL) == 0) {
-              setCV(a, (byte)(~data), c);
+              byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
+              setCV(a, (byte)(~data));
               a += (byte)(~data) + c;
             }
             else {
               extraCycles++;
-              doSBCDecimal(data, c);
+              doSBCDecimal(data);
             }
           }
           setNZ(a);
@@ -754,14 +750,10 @@ public class W65C02S {
            case S_INC -> (short)(0x100 | (++s & 0xFF));
            case S_DEC -> (short)(0x100 | (s-- & 0xFF));
            case VAL -> interruptMode.vector();
-           case VAH -> interruptMode.vector() + 1;
+           case VAH -> { p |= INTERRUPT_DISABLE; p &= ~DECIMAL; yield interruptMode.vector() + 1; }
            default -> (short)addressBus.value();
          }
       );
-      if(c.address() == Register.VAH) {
-        p |= INTERRUPT_DISABLE;
-        p &= ~DECIMAL;
-      }
     }
     if(c.rwb()) {
       readRegister = c.data();
