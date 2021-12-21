@@ -107,7 +107,7 @@ public class RelativeTests {
         85 33    ; STA $33
         5F 33 59 ; BBR5 $33,$#59 ($260)
         A9 23    ; LDA #$23
-        """, 12,
+        """, 13,
         Assertions.assertA(0x42)),
 
       params("BBR5 false", """
@@ -123,7 +123,7 @@ public class RelativeTests {
         85 33    ; STA $33
         CF 33 59 ; BBS4 $33,$#59 ($260)
         A9 23    ; LDA #$23
-        """, 12,
+        """, 13,
         Assertions.assertA(0x42)),
 
       params("BBS4 false", """

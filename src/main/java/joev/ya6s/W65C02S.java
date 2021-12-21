@@ -397,6 +397,11 @@ public class W65C02S {
   public byte s() { return s; }
   public byte p() { return p; }
 
+  /**
+   * Return the processor status bits as a String.
+   *
+   * @return the status string
+   */
   public String status() {
     char[] c = new char[8];
     c[0] = ((p & NEGATIVE) == 0) ?          'n' : 'N';
@@ -417,21 +422,48 @@ public class W65C02S {
   public boolean stopped() { return stopped; }
   public long cycleCount() { return cycleCount; }
 
+  /**
+   * Set or clear the Negative and Zero flags based on the data.
+   * If the data is zero, set the Zero flag, otherwise, clear it.
+   * Set the Negative flag to the value of thee high bit of the data.
+   *
+   * @param data the byte used to set or cleart the flags.
+   */
   private void setNZ(byte data) {
     p = (byte)((data == 0) ? (p | ZERO)     : (p & ~ZERO));
     p = (byte)((data <  0) ? (p | NEGATIVE) : (p & ~NEGATIVE));
   }
 
+  /**
+   * Set the Carry flag to the given value.
+   *
+   * @param value the new value of the Carry flag.
+   */
   private void setC(boolean value) {
     p = (byte)(value ? (p | CARRY) : (p & ~CARRY));
   }
 
+  /**
+   * Set the Carry and Overflow flags based on the sum of two bytes
+   * and the existing Carry flag.  Used during addition and subtraction.
+   *
+   * TODO: Remove carry as an argument, get it from the flags.
+   *
+   * @param a the first byte
+   * @param b the second byte
+   * @param carry the value of the carry flag.
+   */
   private void setCV(byte a, byte b, byte carry) {
     byte c = (byte)(a + b + carry);
     p = (byte)(((((a & b) | ((a ^ b) & ~c)) & 0x80) != 0) ? (p | CARRY)    : (p & ~CARRY));
     p = (byte)(((((a ^ c) & (b ^ c))        & 0x80) != 0) ? (p | OVERFLOW) : (p & ~OVERFLOW));
   }
 
+  /**
+   * Shift the byte left, setting the carry flag from the high bit.
+   *
+   * @param data the byte to shift.
+   */
   private byte doASL(byte data) {
     p = (byte)((data & 0x80) != 0 ? (p | CARRY) : (p & ~CARRY));
     data <<= 1;
@@ -439,6 +471,11 @@ public class W65C02S {
     return data;
   }
 
+  /**
+   * Rorate the byte left, through the carry flag.
+   *
+   * @param data the byte to rotate
+   */
   private byte doROL(byte data) {
     byte b0 = (byte)((p & CARRY) != 0 ? 1 : 0);
     setC((data & 0x80) != 0);
@@ -447,7 +484,12 @@ public class W65C02S {
     return data;
   }
 
-
+  /**
+   * Shift the byte right, setting the high bit to zero, moving the
+   * low byte to the carry flag.
+   *
+   * @param data the byte to shift.
+   */
   private byte doLSR(byte data) {
     p = (byte)((data & 0x01) == 0 ? (p & ~CARRY) : (p | CARRY));
     data = (byte)((data >> 1) & 0x7F);
@@ -455,6 +497,11 @@ public class W65C02S {
     return data;
   }
 
+  /**
+   * ROtate the byte right, through the carry flag.
+   *
+   * @param data the byte to rotate.
+   */
   private byte doROR(byte data) {
     byte b7 = (byte)((p & CARRY) == 0 ? 0 : 0x80);
     p = (byte)((data & 0x01) == 0 ? (p & ~CARRY) : (p | CARRY));
@@ -463,6 +510,15 @@ public class W65C02S {
     return data;
   }
 
+  /**
+   * Perform a BCD addition.
+   *
+   * TODO: get the carry flag value from the status.
+   * TODO: Set the N and V flags.
+   *
+   * @param data the byte to add to the accumulator
+   * @param c the carry flag value
+   */
   private void doADCDecimal(byte data, byte c) {
     byte lo = (byte)(((a & 0x0F) + (data & 0x0F) + c) & 0xFF);
     c = 0;
@@ -472,6 +528,15 @@ public class W65C02S {
     a = (byte)((hi << 4) | lo);
   }
 
+  /**
+   * Perform a BCD subtraction..
+   *
+   * TODO: get the carry flag value from the status.
+   * TODO: Set the N and V flags.
+   *
+   * @param data the byte to add to the accumulator
+   * @param c the carry flag value
+   */
   private void doSBCDecimal(byte data, byte c) {
     byte lo = (byte)(((a & 0x0F) - (data & 0x0F) - 1 + c) & 0xFF);
     c = 0;
@@ -481,7 +546,11 @@ public class W65C02S {
     a = (byte)((hi << 4) | lo);
   }
 
-  // tick:
+  /**
+   * Handle a clock edge.
+   *
+   * @param eventType the type of clock signal edge.
+   */
   public void tick(Signal.EventType eventType) {
     // If this is a positive edge, or if the processor is stopped,
     // and we're not resetting, return.
@@ -529,6 +598,7 @@ public class W65C02S {
         // the branching decision here.
         // TODO: Add an extra cycle if pc crosses a page boundary.
         if(addressingModes[opcode] == RELATIVE) {
+          byte page = (byte)((pc >> 8) & 0xFF);
           switch(instructions[opcode]) {
             case BPL: if((p & NEGATIVE) == 0) { pc += data; extraCycles++; } break;
             case BMI: if((p & NEGATIVE) != 0) { pc += data; extraCycles++; } break;
@@ -540,6 +610,11 @@ public class W65C02S {
             case BEQ: if((p & ZERO)     != 0) { pc += data; extraCycles++; } break;
             case BRA:                         { pc += data; extraCycles++; } break;
             default:
+          }
+
+          // Check to see if a page boundary was crossed.
+          if(page != (byte)((pc >> 8) & 0xFF)) {
+            extraCycles++;
           }
         }
         break;
@@ -617,6 +692,7 @@ public class W65C02S {
               a += data + c;
             }
             else {
+              extraCycles++;
               doADCDecimal(data, c);
             }
             setNZ(a);
@@ -629,6 +705,7 @@ public class W65C02S {
               a += (byte)(~data) + c;
             }
             else {
+              extraCycles++;
               doSBCDecimal(data, c);
             }
           }
@@ -636,7 +713,8 @@ public class W65C02S {
           break;
         case BBS:
         case BBR:
-          if(branch) pc+=data; break;
+          // TODO: Add extra cycle on page crossing.
+          if(branch) { pc+=data; extraCycles++; } break;
         default:
       }
     }
@@ -671,7 +749,7 @@ public class W65C02S {
            case DO_Y -> (zp + y) & 0xFF;
            case DO_X_1 -> (zp + x + 1) & 0xFF;
            case DO_X_INC -> (zp++ + x) & 0xFF;
-           case AA_Y -> aa + (y & 0xFF);
+           case AA_Y -> { if(((aa & 0xFF) + (y & 0xFF)) > 0xFF) { extraCycles++; }; yield aa + (y & 0xFF); }
            case S -> (short)(0x100 | (s & 0xFF));
            case S_INC -> (short)(0x100 | (++s & 0xFF));
            case S_DEC -> (short)(0x100 | (s-- & 0xFF));
