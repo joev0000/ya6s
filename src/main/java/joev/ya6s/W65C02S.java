@@ -661,6 +661,9 @@ public class W65C02S {
       default:
     }
     if(cycle == 0) {
+      if(resb.value()) {
+        interruptMode = InterruptMode.NONE;
+      }
       // do the previous ALU op, if necessary..
       switch(instructions[opcode]) {
         case LDA: case PLA: a = data;  setNZ(a); break;
@@ -785,11 +788,6 @@ public class W65C02S {
     cycle++;
     if(cycle == cycles.length) {
       cycle = 0;
-      if(resb.value()) {
-        // TODO: This may not need to be done here, but when we check the
-        // interrupt status at the start of tick()
-        interruptMode = InterruptMode.NONE;
-      }
     }
   }
 }
