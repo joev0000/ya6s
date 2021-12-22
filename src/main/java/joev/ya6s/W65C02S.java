@@ -335,7 +335,6 @@ public class W65C02S {
   private byte p = RESERVED;
 
   private byte op;
-  private byte data;
   private short aa;
   private byte zp;
   private short new_pc;
@@ -575,6 +574,7 @@ public class W65C02S {
     }
 
     // If the bus is enabled, latch the data bus value.
+    byte data = 0;
     if(be.value()) {
       data = (byte)dataBus.value();
     }
@@ -726,67 +726,61 @@ public class W65C02S {
     }
 
     Cycle c = cycles[cycle];
+    short address = (short)switch(c.address()) {
+      case PC_INC -> pc++;
+      case PC -> pc;
+      case AA -> aa;
+      case AA_X -> aa + (x & 0xFF);
+      case AA_X_1 -> aa + (x & 0xFF) + 1;
+      case AA_INC -> aa++;
+      case DO -> zp & 0xFF;
+      case DO_INC -> zp++ & 0xFF;
+      case DO_X -> (zp + x) & 0xFF;
+      case DO_Y -> (zp + y) & 0xFF;
+      case DO_X_1 -> (zp + x + 1) & 0xFF;
+      case DO_X_INC -> (zp++ + x) & 0xFF;
+      case AA_Y -> { if(((aa & 0xFF) + (y & 0xFF)) > 0xFF) { extraCycles++; }; yield aa + (y & 0xFF); }
+      case S -> (0x100 | (s & 0xFF));
+      case S_INC -> (0x100 | (++s & 0xFF));
+      case S_DEC -> (0x100 | (s-- & 0xFF));
+      case VAL -> interruptMode.vector();
+      case VAH -> { p |= INTERRUPT_DISABLE; p &= ~DECIMAL; yield interruptMode.vector() + 1; }
+      default -> addressBus.value();
+    };
+    data = (byte)switch(c.data()) {
+      case DATA -> switch(instructions[opcode]) {
+        case STA, PHA -> a;
+        case STX, PHX -> x;
+        case STY, PHY -> y;
+        case STZ -> 0;
+        case PHP ->  (byte) (p | BREAK);
+        case BRK -> {
+          int d = p | BREAK;
+          p &= ~DECIMAL;
+          yield d;
+        }
+        default -> data;
+      };
+      case PCH -> (pc >> 8) & 0xFF;
+      case PCL -> pc & 0xFF;
+      case P -> p;
+      default -> data;
+    };
+
+    if(be.value()) {
+      addressBus.value(address);
+      if(c.rwb()) {
+        readRegister = c.data();
+      }
+      else {
+        readRegister = NULL;
+        dataBus.value(data);
+      }
+    }
     vpb.value(c.vpb());
     mlb.value(c.mlb());
-    sync.value(c.sync());
     rwb.value(c.rwb());
-    if(be.value()) {
-      addressBus.value(
-         switch(c.address()) {
-           case PC_INC -> pc++;
-           case PC -> pc;
-           case AA -> aa;
-           case AA_X -> aa + (x & 0xFF);
-           case AA_X_1 -> aa + (x & 0xFF) + 1;
-           case AA_INC -> aa++;
-           case DO -> zp & 0xFF;
-           case DO_INC -> zp++ & 0xFF;
-           case DO_X -> (zp + x) & 0xFF;
-           case DO_Y -> (zp + y) & 0xFF;
-           case DO_X_1 -> (zp + x + 1) & 0xFF;
-           case DO_X_INC -> (zp++ + x) & 0xFF;
-           case AA_Y -> { if(((aa & 0xFF) + (y & 0xFF)) > 0xFF) { extraCycles++; }; yield aa + (y & 0xFF); }
-           case S -> (short)(0x100 | (s & 0xFF));
-           case S_INC -> (short)(0x100 | (++s & 0xFF));
-           case S_DEC -> (short)(0x100 | (s-- & 0xFF));
-           case VAL -> interruptMode.vector();
-           case VAH -> { p |= INTERRUPT_DISABLE; p &= ~DECIMAL; yield interruptMode.vector() + 1; }
-           default -> (short)addressBus.value();
-         }
-      );
-    }
-    if(c.rwb()) {
-      readRegister = c.data();
-    }
-    else {
-      readRegister = NULL;
-      if(c.data() == DATA) {
-        switch (instructions[opcode]) {
-          case STA, PHA -> data = a;
-          case STX, PHX -> data = x;
-          case STY, PHY -> data = y;
-          case STZ -> data = 0;
-          case PHP -> data = (byte) (p | BREAK);
-          case BRK -> {
-            data = (byte) (p | BREAK);
-            p &= ~DECIMAL;
-          }
-          default -> {
-          }
-        }
-      }
-      if(be.value()) {
-        dataBus.value(
-          switch(c.data()) {
-            case DATA -> data;
-            case PCH -> (pc >> 8) & 0xFF;
-            case PCL -> pc & 0xFF;
-            case P -> p;
-            default -> -1; // TODO fix this.
-          }
-        );
-      }
-    }
+    sync.value(c.sync());
     cycle++;
     if(cycle == cycles.length) {
       cycle = 0;
