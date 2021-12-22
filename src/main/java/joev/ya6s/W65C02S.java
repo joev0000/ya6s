@@ -756,6 +756,7 @@ public class W65C02S {
         case PHP ->  (byte) (p | BREAK);
         case BRK -> {
           int d = p | BREAK;
+          p |= INTERRUPT_DISABLE;
           p &= ~DECIMAL;
           yield d;
         }
@@ -788,9 +789,6 @@ public class W65C02S {
         // TODO: This may not need to be done here, but when we check the
         // interrupt status at the start of tick()
         interruptMode = InterruptMode.NONE;
-      }
-      if(op == 0) { // BRK
-        p |= INTERRUPT_DISABLE;
       }
     }
   }
