@@ -1,6 +1,7 @@
 package joev.ya6s;
 
-import static joev.ya6s.Register.*;
+import static joev.ya6s.Address.*;
+import static joev.ya6s.Data.*;
 
 /**
  * An enumeration of the machine addressing modes, which include lists of Cycles to execute.
@@ -56,23 +57,23 @@ public enum AddressingMode {
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
-      new Cycle(true,  true,  false, DO,       DATA,    true)
+      new Cycle(true,  true,  false, ZP,       DATA,    true)
     ),
     // STA, STX, STY, STZ
     ZERO_PAGE_W("Zero Page", "$02X",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO ,     true),
-      new Cycle(true,  true,  false, DO,       DATA,    false)
+      new Cycle(true,  true,  false, ZP,       DATA,    false)
     ),
     // cycle[4] should be DO+1 for non-SMB, non-RMB.
     ZERO_PAGE_RMW("Zero Page", "$02X",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  false, false, PC_INC,   DO ,     true),
-      new Cycle(true,  false, false, DO,       DATA,    true),
-      new Cycle(true,  false, false, DO,       IO,      true),
-      new Cycle(true,  false, false, DO,       DATA,    false)
+      new Cycle(true,  false, false, ZP,       DATA,    true),
+      new Cycle(true,  false, false, ZP,       IO,      true),
+      new Cycle(true,  false, false, ZP,       DATA,    false)
     ),
     ACCUMULATOR("Accumulator", "",
       //        VPB    MLB    SYNC   Address   Data     RWB
@@ -90,16 +91,16 @@ public enum AddressingMode {
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
-      new Cycle(true,  true,  false, DO_INC,   AAL,     true),
-      new Cycle(true,  true,  false, DO,       AAH,     true),
+      new Cycle(true,  true,  false, ZP_INC,   AAL,     true),
+      new Cycle(true,  true,  false, ZP,       AAH,     true),
       new Cycle(true,  true,  false, AA_Y,     DATA,    true)
     ),
     ZERO_PAGE_INDEXED_W("Zero Page Indexed", "($%02X),Y",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
-      new Cycle(true,  true,  false, DO_INC,   AAL,     true),
-      new Cycle(true,  true,  false, DO,       AAH,     true),
+      new Cycle(true,  true,  false, ZP_INC,   AAL,     true),
+      new Cycle(true,  true,  false, ZP,       AAH,     true),
       new Cycle(true,  true,  false, AA_Y,     DATA,    false)
     ),
     ZERO_PAGE_INDIRECT_X("Zero Page Indirect", "($%02X,X)",
@@ -107,8 +108,8 @@ public enum AddressingMode {
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       IO,      true),
-      new Cycle(true,  true,  false, DO_X_INC, AAL,     true),
-      new Cycle(true,  true,  false, DO_X,     AAH,     true),
+      new Cycle(true,  true,  false, ZP_X_INC, AAL,     true),
+      new Cycle(true,  true,  false, ZP_X,     AAH,     true),
       new Cycle(true,  true,  false, AA,       DATA,    true)
     ),
     ZERO_PAGE_INDIRECT_X_W("Zero Page Indirect", "($%02X,X)",
@@ -116,8 +117,8 @@ public enum AddressingMode {
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       IO,      true),
-      new Cycle(true,  true,  false, DO_X_INC, AAL,     true),
-      new Cycle(true,  true,  false, DO_X,     AAH,     true),
+      new Cycle(true,  true,  false, ZP_X_INC, AAL,     true),
+      new Cycle(true,  true,  false, ZP_X,     AAH,     true),
       new Cycle(true,  true,  false, AA,       DATA,    false)
     ),
     ZERO_PAGE_X("Zero Page, X", "$02X,X",
@@ -125,37 +126,37 @@ public enum AddressingMode {
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       IO,      true),
-      new Cycle(true,  true,  false, DO_X,     DATA,    true)
+      new Cycle(true,  true,  false, ZP_X,     DATA,    true)
     ),
     ZERO_PAGE_X_W("Zero Page, X", "$02X,X",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       IO,      true),
-      new Cycle(true,  true,  false, DO_X,     DATA,    false)
+      new Cycle(true,  true,  false, ZP_X,     DATA,    false)
     ),
     ZERO_PAGE_X_RMW("Zero Page, X", "$02X,X",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       NULL,    true), // was IO
-      new Cycle(true,  false, false, DO_X,     DATA,    true),
-      new Cycle(true,  false, false, DO_X  ,   IO,      true), // should be X+1
-      new Cycle(true,  false, false, DO_X,     DATA,    false)
+      new Cycle(true,  false, false, ZP_X,     DATA,    true),
+      new Cycle(true,  false, false, ZP_X  ,   IO,      true), // should be X+1
+      new Cycle(true,  false, false, ZP_X,     DATA,    false)
     ),
     ZERO_PAGE_Y("Zero Page, Y", "$02X,Y",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       IO,      true),
-      new Cycle(true,  true,  false, DO_Y,     DATA,    true)
+      new Cycle(true,  true,  false, ZP_Y,     DATA,    true)
     ),
     ZERO_PAGE_Y_W("Zero Page, Y", "$02X,Y",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
       new Cycle(true,  true,  false, PC,       IO,      true),
-      new Cycle(true,  true,  false, DO_Y,     DATA,    false)
+      new Cycle(true,  true,  false, ZP_Y,     DATA,    false)
     ),
     ABSOLUTE_X("Absolute, X", "$04X,X",
       //        VPB    MLB    SYNC   Address   Data     RWB
@@ -205,8 +206,8 @@ public enum AddressingMode {
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
-      new Cycle(true,  true,  false, DO,       DATA,    true),
-      new Cycle(true,  true,  false, DO,       IO,      true),
+      new Cycle(true,  true,  false, ZP,       DATA,    true),
+      new Cycle(true,  true,  false, ZP,       IO,      true),
       new Cycle(true,  true,  false, PC_INC,   DATA,    true) // this is not what the spec does.
     ),
     ABSOLUTE_INDIRECT("Absolute Indirect", "%04X",
@@ -282,16 +283,16 @@ public enum AddressingMode {
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
-      new Cycle(true,  true,  false, DO_INC,   AAL,     true),
-      new Cycle(true,  true,  false, DO_INC,   AAH,     true),
+      new Cycle(true,  true,  false, ZP_INC,   AAL,     true),
+      new Cycle(true,  true,  false, ZP_INC,   AAH,     true),
       new Cycle(true,  true,  false, AA,       DATA,    true)
     ),
     ZERO_PAGE_INDIRECT_W("Zero Page Indirect", "($%02X)",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
-      new Cycle(true,  true,  false, DO_INC,   AAL,     true),
-      new Cycle(true,  true,  false, DO_INC,   AAH,     true),
+      new Cycle(true,  true,  false, ZP_INC,   AAL,     true),
+      new Cycle(true,  true,  false, ZP_INC,   AAH,     true),
       new Cycle(true,  true,  false, AA,       DATA,    false)
     ),
     NOP_1BYTE_1CYCLE("NOP", "",

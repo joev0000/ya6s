@@ -11,5 +11,5 @@ package joev.ya6s;
  * @param rwb the value of the Read / Not Write signal.
  */
 public record Cycle(boolean vpb, boolean mlb, boolean sync,
-    Register address, Register data, boolean rwb) {
+    Address address, Data data, boolean rwb) {
 }

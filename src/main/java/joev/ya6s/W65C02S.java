@@ -1,8 +1,9 @@
 package joev.ya6s;
 
+import static joev.ya6s.Address.*;
+import static joev.ya6s.Data.*;
 import static joev.ya6s.AddressingMode.*;
 import static joev.ya6s.Instruction.*;
-import static joev.ya6s.Register.*;
 
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
@@ -338,7 +339,7 @@ public class W65C02S {
   private short aa;
   private byte zp;
   private short new_pc;
-  private Register readRegister = NULL;
+  private Data readRegister = NULL;
   private InterruptMode interruptMode = InterruptMode.NONE;
 
   private Cycle[] cycles = IMPLIED.cycles();
@@ -736,12 +737,12 @@ public class W65C02S {
       case AA_X -> aa + (x & 0xFF);
       case AA_X_1 -> aa + (x & 0xFF) + 1;
       case AA_INC -> aa++;
-      case DO -> zp & 0xFF;
-      case DO_INC -> zp++ & 0xFF;
-      case DO_X -> (zp + x) & 0xFF;
-      case DO_Y -> (zp + y) & 0xFF;
-      case DO_X_1 -> (zp + x + 1) & 0xFF;
-      case DO_X_INC -> (zp++ + x) & 0xFF;
+      case ZP -> zp & 0xFF;
+      case ZP_INC -> zp++ & 0xFF;
+      case ZP_X -> (zp + x) & 0xFF;
+      case ZP_Y -> (zp + y) & 0xFF;
+      case ZP_X_1 -> (zp + x + 1) & 0xFF;
+      case ZP_X_INC -> (zp++ + x) & 0xFF;
       case AA_Y -> { if(((aa & 0xFF) + (y & 0xFF)) > 0xFF) { extraCycles++; }; yield aa + (y & 0xFF); }
       case S -> (0x100 | (s & 0xFF));
       case S_INC -> (0x100 | (++s & 0xFF));
