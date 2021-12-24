@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.function.Consumer;
 
+import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -21,13 +22,12 @@ public class TestUtils {
    */
   public static int run(Backplane backplane, W65C02S cpu, int maxCycles) {
     int cycles = 0;
-    Signal clock = backplane.clock();
+    Clock clock = new Clock(backplane.clock());
     cpu.resb().value(true);
     while(!cpu.stopped()) {
       if(cycles == maxCycles)
         throw new CyclesExceededException(maxCycles);
-      clock.value(true);
-      clock.value(false);
+      clock.cycle();
       cycles++;
     }
     return cycles;
@@ -53,8 +53,8 @@ public class TestUtils {
     Bus address = backplane.address();
     Bus data = backplane.data();
     Signal rwb = backplane.rwb();
-    Signal clock = backplane.clock();
     Signal rdy = cpu.rdy();
+    Clock clock = new Clock(backplane.clock());
 
     rdy.value(false);
     String[] lines = hex.split("\n");
@@ -63,11 +63,10 @@ public class TestUtils {
       if(!trimmed.isBlank()) {
         String[] bytes = trimmed.split("[ \t]+");
         for(String h: bytes) {
-          clock.value(false);
           address.value(location++);
           data.value(Integer.parseInt(h, 16));
           rwb.value(false);
-          clock.value(true);
+          clock.cycle();
         }
       }
     }
@@ -83,14 +82,14 @@ public class TestUtils {
   }
 
   public static void executeTest(Parameters params, Backplane backplane, W65C02S cpu) {
-    Signal clock = backplane.clock();
     TestUtils.load(backplane, cpu, 0x200, params.program() + "\nDB");
     TestUtils.load(backplane, cpu, 0xFFFC, "00 02");
+    Clock clock = new Clock(backplane.clock());
 
     backplane.be().value(true);
     cpu.resb().value(false);
-    clock.value(false); clock.value(true);
-    clock.value(false); clock.value(true);
+    clock.cycle();
+    clock.cycle();
     cpu.resb().value(true);
 
 //    int cycles = params.cycles() + 7 + 3;  // + reset + STP

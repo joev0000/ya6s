@@ -6,6 +6,7 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import joev.ya6s.Clock;
 import joev.ya6s.monitor.Command;
 import joev.ya6s.monitor.Monitor;
 import joev.ya6s.monitor.MonitorParser;
@@ -14,20 +15,6 @@ import joev.ya6s.signals.Signal;
 import joev.ya6s.signals.Bus;
 
 public class Main {
-
-  public static void load(Backplane backplane, int start, int... bytes) {
-    Signal clock = backplane.clock();
-    Bus address = backplane.address();
-    Bus data = backplane.data();
-    clock.value(false);
-    for(int i = 0; i < bytes.length; i++) {
-      clock.value(false);
-      address.value((short)(start + i));
-      data.value(bytes[i] & 0xFF);
-      clock.value(true);
-    }
-  }
-
   public static void main(String[] args) throws Exception {
 
     final Backplane backplane = new Backplane();
@@ -37,10 +24,11 @@ public class Main {
     Monitor.ttyOut = System.out;
 
     final W65C02S cpu = new W65C02S(backplane);
+    final Clock clock = new Clock(backplane.clock());
     final Signal resb = cpu.resb();
     resb.value(true);
     backplane.be().value(true);
-    Monitor monitor = new Monitor(backplane, cpu, System.in, System.out, toUartIn);
+    Monitor monitor = new Monitor(backplane, clock, cpu, System.in, System.out, toUartIn);
     if(args.length > 0) {
       Files.lines(Path.of(args[0]))
         .map(String::trim)

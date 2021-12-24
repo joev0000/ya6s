@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.signals.Signal;
 
 /**
@@ -28,15 +29,13 @@ public class ResetCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
+    Clock clock = monitor.clock();
 
     backplane.resb().value(false);
-    Signal clock = backplane.clock();
 
     // Two cycles to kick the CPU into reset mode.
-    clock.value(true);
-    clock.value(false);
-    clock.value(true);
-    clock.value(false);
+    clock.cycle();
+    clock.cycle();
 
     backplane.resb().value(true);
     return null;

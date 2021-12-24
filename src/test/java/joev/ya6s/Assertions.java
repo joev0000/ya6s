@@ -184,11 +184,11 @@ public class Assertions {
 
   public static Consumer<W65C02S> assertMemory(Backplane backplane, int address, int value) {
     return cpu -> {
+      Clock clock = new Clock(backplane.clock());
       cpu.rdy().value(false);
       backplane.address().value(address);
       backplane.rwb().value(true);
-      backplane.clock().value(false);
-      backplane.clock().value(true);
+      clock.cycle();
       cpu.rdy().value(true);
 
       assertEquals(value, backplane.data().value());

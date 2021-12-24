@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Signal;
 
@@ -34,12 +35,11 @@ public class StepCommand implements Command {
     W65C02S cpu = monitor.cpu();
 
     Signal sync = backplane.sync();
-    Signal clock = backplane.clock();
+    Clock clock = monitor.clock();
     boolean synced = false;
     while(!cpu.stopped() && !synced) { // or hit a breakpoint
       monitor.updateProfile();
-      clock.value(true);
-      clock.value(false);
+      clock.cycle();
       synced = sync.value();
     }
     if(cpu.stopped()) {

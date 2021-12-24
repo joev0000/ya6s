@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -66,9 +67,9 @@ public class ReadCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
+    Clock clock = monitor.clock();
 
     Signal rdy = backplane.rdy();
-    Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();
     Bus address = backplane.address();
     Bus data = backplane.data();
@@ -86,10 +87,9 @@ public class ReadCommand implements Command {
     while(loc < alignedEnd) {
       System.out.format("%04X: ", loc);
       for(int i = 0; i < 16; i++) {
-        clock.value(false);
         address.value(loc++);
         rwb.value(true);
-        clock.value(true);
+        clock.cycle();
         line[i] = (byte)data.value();
       }
       for(int i = 0; i < 8; i++) {
@@ -112,8 +112,7 @@ public class ReadCommand implements Command {
     // Restore the original address and data bus values.
     address.value(oldAddress);
     data.value(oldData);
-    clock.value(false);
-    clock.value(true);
+    clock.cycle();
     rdy.value(oldRdy);
     return null;
   }

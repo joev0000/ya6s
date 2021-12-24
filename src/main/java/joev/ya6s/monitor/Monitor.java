@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Signal;
 import joev.ya6s.smartline.Smartline;
@@ -18,6 +19,7 @@ import java.util.function.Predicate;
 public class Monitor {
   //private final MonitorParser parser;
   private final Backplane backplane;
+  private final Clock clock;
   private final W65C02S cpu;
   private final Smartline sl;
   private final PrintStream out;
@@ -38,14 +40,24 @@ public class Monitor {
    * @param cpu the CPU of the system.
    * @param in the input stream of the user commands.
    */
-  public Monitor(Backplane backplane, W65C02S cpu, InputStream in, OutputStream out, OutputStream console) {
+  public Monitor(Backplane backplane, Clock clock, W65C02S cpu, InputStream in, OutputStream out, OutputStream console) {
     this.backplane = backplane;
+    this.clock = clock;
     this.cpu = cpu;
     this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
     this.console = console;
     sl = new Smartline(in, out);
 
     backplane.sync().register(syncFn);
+  }
+
+  /**
+   * Get the clock.
+   *
+   * @return the clock.
+   */
+  public Clock clock() {
+    return clock;
   }
 
   /**
@@ -135,7 +147,6 @@ public class Monitor {
    */
   public void run() {
     MonitorParser parser;
-    Signal clock = backplane.clock();
     Signal sync = backplane.sync();
     Command command;
     int c;
@@ -157,8 +168,7 @@ public class Monitor {
         // At this point, the Continue command was used.
         out.println("(Ctrl-E to pause.)");
         updateProfile();
-        clock.value(true);
-        clock.value(false);
+        clock.cycle();
 
         // Cycle the clock until either the CPU is stopped, or if ^E is
         // entered in the console.
@@ -177,8 +187,7 @@ public class Monitor {
           }
           if(c >= 0) console.write(c);
           updateProfile();
-          clock.value(true);
-          clock.value(false);
+          clock.cycle();
         }
 
         // The processor is either stopped or paused. Cycle the clock
@@ -186,8 +195,7 @@ public class Monitor {
         // has been executed.
         while(!sync.value()) {
           updateProfile();
-          clock.value(true);
-          clock.value(false);
+          clock.cycle();
         }
         if(breakpoint != null) {
           out.format("Breakpoint: %s%n", breakpoint);

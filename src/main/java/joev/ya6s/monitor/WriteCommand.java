@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -30,9 +31,9 @@ public class WriteCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
+    Clock clock = monitor.clock();
 
     Signal rdy = backplane.rdy();
-    Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();
     Bus address = backplane.address();
     Bus dataBus = backplane.data();
@@ -41,11 +42,10 @@ public class WriteCommand implements Command {
     rdy.value(false);
     short loc = start;
     for (byte datum : data) {
-      clock.value(false);
       address.value(loc++);
       dataBus.value(datum);
       rwb.value(false);
-      clock.value(true);
+      clock.cycle();
     }
     rdy.value(oldRdy);
     return null;

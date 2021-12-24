@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -36,22 +37,21 @@ public class LoadCommand implements Command {
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
     Signal rdy = backplane.rdy();
-    Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();
     Bus address = backplane.address();
     Bus dataBus = backplane.data();
 
+    Clock clock = monitor.clock();
     boolean oldRdy = rdy.value();
     try(InputStream in = new FileInputStream(path)) {
       rdy.value(false);
       short loc = start;
       byte[] data = in.readAllBytes();
       for (byte datum : data) {
-        clock.value(false);
         address.value(loc++);
         dataBus.value(datum);
         rwb.value(false);
-        clock.value(true);
+        clock.cycle();
       }
     }
     catch (IOException ioe) {

@@ -1,6 +1,7 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
+import joev.ya6s.Clock;
 import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Signal;
 
@@ -33,12 +34,11 @@ public class ContinueCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
+    Clock clock = monitor.clock();
     W65C02S cpu = monitor.cpu();
-    Signal clock = backplane.clock();
 
     while(!cpu.stopped()) { // or hit a breakpoint
-      clock.value(true);
-      clock.value(false);
+      clock.cycle();
     }
     if(cpu.stopped()) {
       System.out.println("\nStopped.");

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -14,7 +15,7 @@ import joev.ya6s.signals.Signal;
 public class SRAMTests {
   private SRAM sram;
   private Backplane backplane;
-  private Signal clock;
+  private Clock clock;
   private Signal rwb;
   private Bus addressBus;
   private Bus dataBus;
@@ -25,7 +26,7 @@ public class SRAMTests {
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
-    clock = backplane.clock();
+    clock = new Clock(backplane.clock());
     addressBus = backplane.address();
     dataBus = backplane.data();
     rwb = backplane.rwb();
@@ -42,8 +43,7 @@ public class SRAMTests {
     addressBus.value((short)address);
     dataBus.value(value);
     rwb.value(false);
-    clock.value(false);
-    clock.value(true);
+    clock.cycle();
   }
 
   /**
@@ -55,8 +55,7 @@ public class SRAMTests {
   private byte read(int address) {
     addressBus.value((short)address);
     rwb.value(true);
-    clock.value(false);
-    clock.value(true);
+    clock.cycle();
     return (byte)dataBus.value();
   }
 
