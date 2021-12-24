@@ -369,8 +369,8 @@ public class W65C02S {
     this.mlb = backplane.mlb();
     this.sync = backplane.sync();
     this.rwb = backplane.rwb();
-    this.rdy = new Signal("rdy");
-    this.resb = new Signal("resb");
+    this.rdy = backplane.rdy();
+    this.resb = backplane.resb();
     this.be = backplane.be();
     this.irqb = backplane.irqb();
     this.addressBus = backplane.address();

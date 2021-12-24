@@ -1,7 +1,6 @@
 package joev.ya6s.monitor;
 
 import joev.ya6s.Backplane;
-import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -36,8 +35,7 @@ public class LoadCommand implements Command {
   @Override
   public Command execute(Monitor monitor) {
     Backplane backplane = monitor.backplane();
-    W65C02S cpu = monitor.cpu();
-    Signal rdy = cpu.rdy();
+    Signal rdy = backplane.rdy();
     Signal clock = backplane.clock();
     Signal rwb = backplane.rwb();
     Bus address = backplane.address();

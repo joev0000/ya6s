@@ -17,6 +17,9 @@ public class Backplane {
   private final Signal mlb;
   private final Signal be;
   private final OpenCollector irqb;
+  private final OpenCollector nmib;
+  private final Signal resb;
+  private final Signal rdy;
 
   /**
    * Create a new Backplane
@@ -31,6 +34,9 @@ public class Backplane {
     mlb = new Signal("mlb");
     be = new Signal("be");
     irqb = new OpenCollector("irqb");
+    rdy = new Signal("rdy");
+    resb = new Signal("resb");
+    nmib = new OpenCollector("nmib");
   }
 
   /**
@@ -95,5 +101,26 @@ public class Backplane {
    * @return the irqb signal.
    */
   public OpenCollector irqb() { return irqb; }
+
+  /**
+   * Get the nmiq open collector signal.
+   *
+   * @return the nmib signal.
+   */
+  public OpenCollector nmib() { return nmib; }
+
+  /**
+   * Get the reset signal.
+   *
+   * @return the reset signal
+   */
+  public Signal resb() { return resb; }
+
+  /**
+   * Get the ready signal.
+   *
+   * @return the ready signal.
+   */
+  public Signal rdy() { return rdy; }
 }
 
