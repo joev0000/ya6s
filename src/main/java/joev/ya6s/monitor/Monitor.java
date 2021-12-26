@@ -25,9 +25,9 @@ public class Monitor {
   private final PrintStream out;
   private final OutputStream console;
   private final List<Predicate<W65C02S>> breakpoints = new ArrayList<>();
+  private Predicate<W65C02S> breakpoint = null;
 
   private long profile[] = new long[65536];
-  private short profilePC;
   private final Signal.Listener syncFn = this::sync;
 
   public static InputStream ttyIn;
@@ -67,7 +67,7 @@ public class Monitor {
    */
   private void sync(Signal.EventType eventType) {
     if(eventType == Signal.EventType.POSITIVE_EDGE) {
-      profilePC = cpu.pc();
+      updateProfile((short)backplane.address().value());
     }
   }
 
@@ -129,8 +129,8 @@ public class Monitor {
   /**
    * Update the profiling data with the current profile PC.
    */
-  public void updateProfile() {
-    profile[profilePC & 0xFFFF]++;
+  public void updateProfile(short pc) {
+    profile[pc & 0xFFFF]++;
   }
 
   /**
@@ -143,65 +143,79 @@ public class Monitor {
   }
 
   /**
+   * Stop the clock.  This is called when rdy changes.
+   *
+   * @param eventType the type of the signal event.
+   */
+  private void stopClock(Signal.EventType eventType) {
+    if(eventType == Signal.EventType.NEGATIVE_EDGE) {
+      clock.stop();
+    }
+  }
+
+  /**
+   * Check the breakpoints, and stop the clock if one is hit.
+   * Called when a sync occurs.
+   *
+   * @param eventType the type of the signal event.
+   */
+  private void checkBreakpoints(Signal.EventType eventType) {
+    if(eventType == Signal.EventType.POSITIVE_EDGE) {
+      breakpoint = null;
+      for(Predicate<W65C02S> predicate: breakpoints) {
+        if(predicate.test(cpu)) {
+          breakpoint = predicate;
+          clock.stop();
+        }
+      }
+    }
+  }
+
+  /**
    * Run the monitor loop.  Never exits.
    */
   public void run() {
     MonitorParser parser;
     Signal sync = backplane.sync();
-    Command command;
+    Signal rdy = backplane.rdy();
+    Command command = NoopCommand.instance();
     int c;
     while(true) {
       try {
-        String string = sl.readLine(">>> ");
-        parser = new MonitorParser(new StringReader(string));
-        command = parser.command();
-
         // Run commands one at a time until a Continue command is parsed.
         while(!command.equals(ContinueCommand.instance())) {
           command.execute(this);
-          string = sl.readLine(">>> ");
+          String string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));
           command = parser.command();
         }
+        command = NoopCommand.instance();
 
-        Predicate<W65C02S> breakpoint = null;
-        // At this point, the Continue command was used.
+        rdy.register(this::stopClock);
+        if(breakpoints.size() > 0) {
+          sync.register(this::checkBreakpoints);
+        }
+        else {
+          sync.unregister(this::checkBreakpoints);
+        }
         out.println("(Ctrl-E to pause.)");
-        updateProfile();
-        clock.cycle();
-
-        // Cycle the clock until either the CPU is stopped, or if ^E is
-        // entered in the console.
-        while(!cpu.stopped() && (c = sl.read()) != 0x05) { // ^E
-          // if sync, check breakpoint
-          if(sync.value()) {
-            for(Predicate<W65C02S> predicate: breakpoints) {
-              if(predicate.test(cpu)) {
-                breakpoint = predicate;
-                break;
-              }
-            }
+        clock.start();
+        while(clock.running()) {
+          c = sl.read();
+          if(c == 0x05) { // ^E
+            clock.stop();
           }
-          if(breakpoint != null) {
-            break;
+          else if(c >= 0) {
+            console.write(c);
           }
-          if(c >= 0) console.write(c);
-          updateProfile();
-          clock.cycle();
+          Thread.sleep(100);
         }
 
-        // The processor is either stopped or paused. Cycle the clock
-        // until the next SYNC pulse- to make sure the entire instruction
-        // has been executed.
-        while(!sync.value()) {
-          updateProfile();
-          clock.cycle();
-        }
         if(breakpoint != null) {
           out.format("Breakpoint: %s%n", breakpoint);
         }
         else {
-          out.println(cpu.stopped() ? "Stopped." : "Paused.");
+          out.println(rdy.value() ? "Paused." : "Stopped.");
         }
         out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", (short)(cpu.pc() - 1), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
       }

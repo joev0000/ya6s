@@ -77,7 +77,6 @@ public class Clock {
    */
   public void start() {
     if(!running) {
-      System.out.format("Starting.  delayMillis %d, delayNanos %d, frequency: %3g%n", delayMillis, delayNanos, frequency());
       Runnable runnable = (delayMillis == 0 && delayNanos == 0) ?
         () -> {
           clock.value(true);

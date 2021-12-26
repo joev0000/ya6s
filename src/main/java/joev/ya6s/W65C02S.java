@@ -653,7 +653,7 @@ public class W65C02S {
           case SMB: data = (byte)(data |  (1<<((op >> 4) & 0x07))); break;
 
           case RTS: pc++; break;
-          case STP: stopped = true; break;
+          case STP: stopped = true; rdy().value(false); break;
           // case WAI: waiting = true; break;
           case BRK: if(interruptMode == InterruptMode.NONE) interruptMode = InterruptMode.IRQ; break;
           default:
@@ -786,6 +786,7 @@ public class W65C02S {
     mlb.value(c.mlb());
     rwb.value(c.rwb());
     sync.value(c.sync());
+    // System.out.format("tick: PC: %04X op: %s %s a: %04X, d: %02X %s%n", (short)(pc-1), instructions[opcode], addressingModes[opcode], addressBus.value(), dataBus.value(), c);
     cycle++;
     if(cycle == cycles.length) {
       cycle = 0;

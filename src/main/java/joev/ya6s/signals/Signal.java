@@ -1,7 +1,8 @@
 package joev.ya6s.signals;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A signal in a digital system.
@@ -31,7 +32,7 @@ public class Signal {
   }
 
   private final String name;
-  private final Set<Listener> listeners = new HashSet<>();
+  private List<Listener> listeners = Collections.emptyList();
   private boolean value;
 
   /**
@@ -84,12 +85,14 @@ public class Signal {
       }
     }
   }
+
   /**
    * Register a Listener.
    *
    * @param listener a Listener to notify when the Signal changes.
    */
   public void register(Listener listener) {
+    listeners = new ArrayList<Listener>(listeners);
     listeners.add(listener);
   }
 
@@ -99,6 +102,7 @@ public class Signal {
    * @param listener a Listener to no longer notify.
    */
   public void unregister(Listener listener) {
+    listeners = new ArrayList<Listener>(listeners);
     listeners.remove(listener);
   }
 
