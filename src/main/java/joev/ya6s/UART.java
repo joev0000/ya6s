@@ -304,7 +304,7 @@ public class UART {
         case 2: data.value(IIR); break;
         case 3: data.value(LCR); break;
         case 4: data.value(MCR); break;
-        case 5: data.value(LSR); LSR &= ~(OE | PE | FE | BI | LSR7); break;
+        case 5: data.value(LSR); break;
         case 6: data.value(MSR); break;
         case 7: data.value(SCR); break;
         default:
