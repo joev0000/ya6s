@@ -178,6 +178,7 @@ public class Monitor {
     MonitorParser parser;
     Signal sync = backplane.sync();
     Signal rdy = backplane.rdy();
+    rdy.register(this::stopClock);
     Command command = NoopCommand.instance();
     int c;
     while(true) {
@@ -191,7 +192,6 @@ public class Monitor {
         }
         command = NoopCommand.instance();
 
-        rdy.register(this::stopClock);
         if(breakpoints.size() > 0) {
           sync.register(this::checkBreakpoints);
         }

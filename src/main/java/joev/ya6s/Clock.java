@@ -8,7 +8,7 @@ import joev.ya6s.signals.Signal;
  */
 public class Clock {
   private final Signal clock;
-  private Thread thread;
+  private Thread thread = null;
 
   private volatile boolean running = false;
   private long delayMillis;
@@ -101,7 +101,7 @@ public class Clock {
         };
       running = true;
 
-      thread = new Thread(runnable);
+      thread = new Thread(runnable, "Clock");
       thread.start();
     }
   }
@@ -110,12 +110,16 @@ public class Clock {
    * Stop the clock.
    */
   public void stop() {
-    running = false;
-    try {
-      thread.join();
-      thread = null;
-    }
-    catch (InterruptedException ie) {
+    if(running) {
+      running = false;
+      if(thread != null && thread != Thread.currentThread()) {
+        try {
+          thread.join();
+          thread = null;
+        }
+        catch (InterruptedException ie) {
+        }
+      }
     }
   }
 
