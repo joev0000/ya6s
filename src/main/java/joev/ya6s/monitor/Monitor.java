@@ -27,8 +27,9 @@ public class Monitor {
   private final List<Predicate<W65C02S>> breakpoints = new ArrayList<>();
   private Predicate<W65C02S> breakpoint = null;
 
+  private boolean profiling = false;
   private long profile[] = new long[65536];
-  private final Signal.Listener syncFn = this::sync;
+  private final Signal.Listener profileSync = this::profileSync;
   private final Signal.Listener breakpointSync = this::breakpointSync;
 
   public static InputStream ttyIn;
@@ -48,8 +49,6 @@ public class Monitor {
     this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
     this.console = console;
     sl = new Smartline(in, out);
-
-    backplane.sync().register(syncFn);
   }
 
   /**
@@ -59,17 +58,6 @@ public class Monitor {
    */
   public Clock clock() {
     return clock;
-  }
-
-  /**
-   * Update the profile program counter on instruction load cycles.
-   *
-   * @param eventType the edge type of the sync signal.
-   */
-  private void sync(Signal.EventType eventType) {
-    if(eventType == Signal.EventType.POSITIVE_EDGE) {
-      updateProfile((short)backplane.address().value());
-    }
   }
 
   /**
@@ -125,19 +113,49 @@ public class Monitor {
   }
 
   /**
+   * Enable or disable the profiling feature.
+   *
+   * @param enabled true enables profiling, false disables profiling.
+   */
+  public void profiling(boolean enabled) {
+    if(enabled && !profiling) {
+      backplane.sync().register(profileSync);
+    }
+    else if(profiling && !enabled) {
+      backplane.sync().unregister(profileSync);
+    }
+    profiling = enabled;
+  }
+
+  /**
+   * Update the profiling data with the current profile PC.
+   *
+   * @param pc the address to increment
+   */
+  public void updateProfile(short pc) {
+    if(profiling) {
+      profile[pc & 0xFFFF]++;
+    }
+  }
+
+  /**
+   * Update the profile program counter on instruction load cycles.
+   *
+   * @param eventType the edge type of the sync signal.
+   */
+  private void profileSync(Signal.EventType eventType) {
+    if(profiling && eventType == Signal.EventType.POSITIVE_EDGE) {
+      updateProfile((short)backplane.address().value());
+    }
+  }
+
+  /**
    * Get the profiling data.
    *
    * @return the profile cycle count metric array.
    */
   public long[] profile() {
     return profile;
-  }
-
-  /**
-   * Update the profiling data with the current profile PC.
-   */
-  public void updateProfile(short pc) {
-    profile[pc & 0xFFFF]++;
   }
 
   /**

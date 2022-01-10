@@ -36,7 +36,9 @@ TOKEN [IGNORE_CASE]: {
   <ATTACH: "a" | "attach">: S_ATTACH |
   <BREAK: "b" | "break">: S_BREAK |
   <RESET:       "reset"> |
-  <SHOW:  "show">
+  <SHOW:  "show"> |
+  <ON:    "on"> |
+  <OFF:   "off">
 }
 
 TOKEN: {
@@ -305,6 +307,8 @@ Command command(): { Command c = null; }
     c = reset() |
     LOOKAHEAD(2) c = profileShow() |
     LOOKAHEAD(2) c = profileReset() |
+    LOOKAHEAD(2) c = profileOn() |
+    LOOKAHEAD(2) c = profileOff() |
     LOOKAHEAD(2) c = breakWhen() |
     LOOKAHEAD(2) c = breakAt() |
     LOOKAHEAD(2) c = breakList() |
@@ -398,6 +402,18 @@ Command profileReset(): {
 }
 {
   <PROFILE> <RESET> <EOF> { return ProfileResetCommand.instance(); }
+}
+
+Command profileOn(): {
+}
+{
+  <PROFILE> <ON> <EOF> { return ProfileOnCommand.instance(); }
+}
+
+Command profileOff(): {
+}
+{
+  <PROFILE> <OFF> <EOF> { return ProfileOffCommand.instance(); }
 }
 
 Command attach(): {
