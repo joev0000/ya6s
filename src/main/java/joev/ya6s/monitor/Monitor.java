@@ -29,6 +29,7 @@ public class Monitor {
 
   private long profile[] = new long[65536];
   private final Signal.Listener syncFn = this::sync;
+  private final Signal.Listener breakpointSync = this::breakpointSync;
 
   public static InputStream ttyIn;
   public static OutputStream ttyOut;
@@ -78,6 +79,9 @@ public class Monitor {
    */
   public void addBreakpoint(Predicate<W65C02S> predicate) {
     System.out.format("Adding breakpoint: %s%n", predicate);
+    if(breakpoints.size() == 0) {
+      backplane.sync().register(breakpointSync);
+    }
     breakpoints.add(predicate);
   }
 
@@ -97,6 +101,9 @@ public class Monitor {
    */
   public void removeBreakpoint(int index) {
     breakpoints.remove(index);
+    if(breakpoints.size() == 0) {
+      backplane.sync().unregister(breakpointSync);
+    }
   }
 
   /**
@@ -159,7 +166,7 @@ public class Monitor {
    *
    * @param eventType the type of the signal event.
    */
-  private void checkBreakpoints(Signal.EventType eventType) {
+  private void breakpointSync(Signal.EventType eventType) {
     if(eventType == Signal.EventType.POSITIVE_EDGE) {
       breakpoint = null;
       for(Predicate<W65C02S> predicate: breakpoints) {
@@ -192,12 +199,6 @@ public class Monitor {
         }
         command = NoopCommand.instance();
 
-        if(breakpoints.size() > 0) {
-          sync.register(this::checkBreakpoints);
-        }
-        else {
-          sync.unregister(this::checkBreakpoints);
-        }
         out.println("(Ctrl-E to pause.)");
         clock.start();
         while(clock.running()) {
