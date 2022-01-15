@@ -28,6 +28,7 @@ dependencies {
 compileJava {
   options.compilerArgs += [
     '-g',
+    '-encoding', 'UTF-8',
     '-Xlint:all',
     '-Xlint:-requires-automatic',
     '-Xlint:-requires-transitive-automatic',
