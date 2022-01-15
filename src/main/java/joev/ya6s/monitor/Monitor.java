@@ -211,6 +211,7 @@ public class Monitor {
         // Run commands one at a time until a Continue command is parsed.
         while(!command.equals(ContinueCommand.instance())) {
           command.execute(this);
+          out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", (short)(cpu.pc() - 1), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
           String string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));
           command = parser.command();
@@ -236,7 +237,6 @@ public class Monitor {
         else {
           out.println(rdy.value() ? "Paused." : "Stopped.");
         }
-        out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", (short)(cpu.pc() - 1), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
       }
       catch (Exception e) {
         out.format("ERROR: %s%n", e.getMessage());
