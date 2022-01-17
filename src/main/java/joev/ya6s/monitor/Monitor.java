@@ -219,28 +219,35 @@ public class Monitor {
     rdy.value(false);
     byte[] insrBytes = new byte[3];
     for(;count != 0; count--) {
+      result.append(String.format("$%04X:", address));
       addressBus.value(address++);
       clk.value(false);
       clk.value(true);
       Instruction insr = W65C02S.instructions[dataBus.value() & 0xFF];
       AddressingMode mode = W65C02S.addressingModes[dataBus.value() & 0xFF];
       insrBytes[0] = (byte)dataBus.value();
-      result.append(String.format("%02X ", insrBytes[0]));
       for(int i = 1; i < mode.length(); i++) {
         addressBus.value(address++);
         clk.value(false);
         clk.value(true);
         insrBytes[i] = (byte)dataBus.value();
-        result.append(String.format("%02X ", insrBytes[i]));
       }
-      result.append(insr).append(' ');
+      for(int i = 0; i < 3; i++) {
+        result.append(i < mode.length() ? String.format(" %02X", insrBytes[i]) : "   ");
+      }
+      int operand = mode.length() == 3 ? (insrBytes[2] << 8 | (insrBytes[1] & 0xFF)) : insrBytes[1];
+
+      result.append(": ").append(insr).append(" ");
       if(mode.length() == 3) {
-        result.append(String.format(mode.format(), (short)(insrBytes[2] << 8 | (insrBytes[1] & 0xFF))));
+        result.append(String.format(mode.format(), (short)((insrBytes[2] << 8) | (insrBytes[1] & 0xFF))));
       }
       else if(mode.length() == 2) {
         result.append(String.format(mode.format(), insrBytes[1]));
       }
-      result.append('\n');
+
+      if(count != 1) {
+        result.append('\n');
+      }
     }
     addressBus.value(addressOld);
     dataBus.value(dataOld);
@@ -266,7 +273,7 @@ public class Monitor {
         // Run commands one at a time until a Continue command is parsed.
         while(!command.equals(ContinueCommand.instance())) {
           command.execute(this);
-          out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", (short)(cpu.pc() - 1), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
+          out.format("A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
           out.println(disassemble((short)backplane.address().value(), 1));
           String string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));

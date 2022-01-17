@@ -197,12 +197,12 @@ public enum AddressingMode {
       new Cycle(true,  true,  false, PC_INC,   AAH,     true),
       new Cycle(true,  true,  false, AA_Y,     DATA,    false)
     ),
-    RELATIVE("Relative", 2, "$%02X",
+    RELATIVE("Relative", 2, "%d",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DATA,    true)
     ),
-    RELATIVE_BB("Relative", 3, "$%02X, $%02X",
+    RELATIVE_BB("Relative", 3, "$%04X", // format is not ideal here.
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   DO,      true),
