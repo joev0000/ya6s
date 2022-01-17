@@ -45,7 +45,6 @@ public class StepCommand implements Command {
     if(cpu.stopped()) {
       System.out.println("Stopped.");
     }
-    System.out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", (short)(cpu.pc() - 1), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
     return this;
   }
 

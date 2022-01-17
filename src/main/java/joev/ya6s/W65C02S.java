@@ -9,7 +9,7 @@ import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
 public class W65C02S {
-  private static final Instruction[] instructions = {
+  public static final Instruction[] instructions = {
   // x0  x1  x2  x3  x4  x5  x6  x7   x8  x9  xA  xB  xC  xD  xE  xF
     BRK,ORA,XXX,XXX,TSB,ORA,ASL,RMB, PHP,ORA,ASL,XXX,TSB,ORA,ASL,BBR, // 0x
     BPL,ORA,ORA,XXX,TRB,ORA,ASL,RMB, CLC,ORA,INC,XXX,TRB,ORA,ASL,BBR, // 1x
@@ -32,7 +32,7 @@ public class W65C02S {
     BEQ,SBC,SBC,XXX,XXX,SBC,INC,SMB, SED,SBC,PLX,XXX,XXX,SBC,INC,BBS  // Fx
   };
 
-  private static final AddressingMode[] addressingModes = {
+  public static final AddressingMode[] addressingModes = {
     STACK_BRK,              // 00 BRK, STACK
     ZERO_PAGE_INDIRECT_X,   // 01 ORA (zp,X)
     NOP_2BYTE_2CYCLE,       // 02 XXX (undefined, 2 byte, 2 cycle)

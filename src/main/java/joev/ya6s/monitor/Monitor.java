@@ -1,8 +1,11 @@
 package joev.ya6s.monitor;
 
+import joev.ya6s.AddressingMode;
 import joev.ya6s.Backplane;
 import joev.ya6s.Clock;
+import joev.ya6s.Instruction;
 import joev.ya6s.W65C02S;
+import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 import joev.ya6s.smartline.Smartline;
 import java.io.InputStream;
@@ -197,6 +200,58 @@ public class Monitor {
   }
 
   /**
+   * Disassemble instructions.
+   *
+   * @param address the address to start the disassembly from.
+   * @count the number of instructions to disassemble.
+   * @return the disassembly of the instruction(s)
+   */
+  public String disassemble(short address, int count) {
+    StringBuilder result = new StringBuilder();
+    Bus addressBus = backplane.address();
+    Bus dataBus = backplane.data();
+    Signal clk = backplane.clock();
+    Signal rdy = backplane.rdy();
+    boolean rdyOld = rdy.value();
+    short addressOld = (short)addressBus.value();
+    byte dataOld = (byte)dataBus.value();
+    boolean clockWasRunning = clock.running();
+    rdy.value(false);
+    byte[] insrBytes = new byte[3];
+    for(;count != 0; count--) {
+      addressBus.value(address++);
+      clk.value(false);
+      clk.value(true);
+      Instruction insr = W65C02S.instructions[dataBus.value() & 0xFF];
+      AddressingMode mode = W65C02S.addressingModes[dataBus.value() & 0xFF];
+      insrBytes[0] = (byte)dataBus.value();
+      result.append(String.format("%02X ", insrBytes[0]));
+      for(int i = 1; i < mode.length(); i++) {
+        addressBus.value(address++);
+        clk.value(false);
+        clk.value(true);
+        insrBytes[i] = (byte)dataBus.value();
+        result.append(String.format("%02X ", insrBytes[i]));
+      }
+      result.append(insr).append(' ');
+      if(mode.length() == 3) {
+        result.append(String.format(mode.format(), (short)(insrBytes[2] << 8 | (insrBytes[1] & 0xFF))));
+      }
+      else if(mode.length() == 2) {
+        result.append(String.format(mode.format(), insrBytes[1]));
+      }
+      result.append('\n');
+    }
+    addressBus.value(addressOld);
+    dataBus.value(dataOld);
+    rdy.value(rdyOld);
+    if(clockWasRunning) {
+      clock.start();
+    }
+    return result.toString();
+  }
+
+  /**
    * Run the monitor loop.  Never exits.
    */
   public void run() {
@@ -212,6 +267,7 @@ public class Monitor {
         while(!command.equals(ContinueCommand.instance())) {
           command.execute(this);
           out.format("PC: $%04X,  A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", (short)(cpu.pc() - 1), cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
+          out.println(disassemble((short)backplane.address().value(), 1));
           String string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));
           command = parser.command();
@@ -224,6 +280,9 @@ public class Monitor {
           c = sl.read();
           if(c == 0x05) { // ^E
             clock.stop();
+            while(!sync.value()) {
+              clock.cycle();
+            }
           }
           else if(c >= 0) {
             console.write(c);
