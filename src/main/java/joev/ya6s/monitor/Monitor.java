@@ -218,8 +218,14 @@ public class Monitor {
     boolean clockWasRunning = clock.running();
     rdy.value(false);
     byte[] insrBytes = new byte[3];
+
+    // -1 means the current address, since it never makes sense to
+    // disassemble $FFFF
+    if(address == -1) {
+      address = addressOld;
+    }
     for(;count != 0; count--) {
-      result.append(String.format("$%04X:", address));
+      result.append(String.format("%04X: ", address));
       addressBus.value(address++);
       clk.value(false);
       clk.value(true);
@@ -237,7 +243,7 @@ public class Monitor {
       }
       int operand = mode.length() == 3 ? (insrBytes[2] << 8 | (insrBytes[1] & 0xFF)) : insrBytes[1];
 
-      result.append(": ").append(insr).append(" ");
+      result.append("  ").append(insr).append(" ");
       if(mode.length() == 3) {
         result.append(String.format(mode.format(), (short)((insrBytes[2] << 8) | (insrBytes[1] & 0xFF))));
       }

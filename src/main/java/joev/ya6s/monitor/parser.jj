@@ -36,6 +36,7 @@ TOKEN [IGNORE_CASE]: {
   <ATTACH: "a" | "attach">: S_ATTACH |
   <BREAK: "b" | "break">: S_BREAK |
   <RESET:       "reset"> |
+  <DISASSEMBLE: "d" | "disassemble"> |
   <SHOW:  "show"> |
   <ON:    "on"> |
   <OFF:   "off">
@@ -305,6 +306,7 @@ Command command(): { Command c = null; }
     c = load() |
     c = attach() |
     c = reset() |
+    c = disassemble() |
     LOOKAHEAD(2) c = profileShow() |
     LOOKAHEAD(2) c = profileReset() |
     LOOKAHEAD(2) c = profileOn() |
@@ -383,6 +385,18 @@ Command load(): {
 }
 {
   <LOAD> (start=<HEX_NUMBER>|start=<DECIMAL_NUMBER>) path=<FILENAME> <EOF> { return new LoadCommand((short)Integer.parseInt(start.image, 16), path.image); }
+}
+
+Command disassemble(): {
+  Token address = null;
+  Token count = null;
+}
+{
+  <DISASSEMBLE> (address=<HEX_NUMBER> (count=<DECIMAL_NUMBER>)?)? <EOF> {
+    int a = address != null ? Integer.parseInt(address.image, 16) : -1;
+    int c = count != null ? Integer.parseInt(count.image) : 5;
+    return new DisassembleCommand((short)a, c);
+  }
 }
 
 Command profileShow(): {
