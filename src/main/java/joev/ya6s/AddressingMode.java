@@ -210,7 +210,7 @@ public enum AddressingMode {
       new Cycle(true,  true,  false, ZP,       IO,      true),
       new Cycle(true,  true,  false, PC_INC,   DATA,    true) // this is not what the spec does.
     ),
-    ABSOLUTE_INDIRECT("Absolute Indirect", 3, "$%04X",
+    ABSOLUTE_INDIRECT("Absolute Indirect", 3, "($%04X)",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC_INC,   AAL,     true),
