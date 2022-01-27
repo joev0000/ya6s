@@ -85,8 +85,12 @@ public enum AddressingMode {
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),
       new Cycle(true,  true,  false, PC,       IO,      true)
     ),
-    // Maybe one for WAI here?
-    //,
+    IMPLIED_WAI("Implied", 1, "",
+      //        VPB    MLB    SYNC   Address   Data     RWB
+      new Cycle(true,  true,  true,  PC_INC,   OP,      true),
+      new Cycle(true,  true,  false, PC,       IO,      true),
+      new Cycle(true,  true,  false, PC,       IO,      true)
+    ),
     ZERO_PAGE_INDEXED("Zero Page Indirect Indexed", 2, "($%02X),Y",
       //        VPB    MLB    SYNC   Address   Data     RWB
       new Cycle(true,  true,  true,  PC_INC,   OP,      true),

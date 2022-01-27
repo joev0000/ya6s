@@ -33,7 +33,7 @@ START:  LDX     #$FF            ; Initialize stack.
 
         CLI                     ; Clear interrupt disable flag.
 
-@SPIN:  NOP                     ; TODO: This can be WAI
+@SPIN:  WAI                     ; Pause until an interrupt occurs.
         BRA     @SPIN           ; Repeat forever.
 
 C_INIT: LDA     C_CTRL          ; A = Counter control

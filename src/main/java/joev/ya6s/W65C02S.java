@@ -248,7 +248,7 @@ public class W65C02S {
     IMPLIED,                // C8 INY
     IMMEDIATE,              // C9 CMP #
     IMPLIED,                // CA DEX
-    NOT_IMPLEMENTED,        // CB WAI
+    IMPLIED_WAI,            // CB WAI
     ABSOLUTE,               // CC CPY abs
     ABSOLUTE,               // CD CMP abs
     ABSOLUTE_RMW,           // CE DEC
@@ -345,6 +345,7 @@ public class W65C02S {
   private Cycle[] cycles = IMPLIED.cycles();
   private int cycle;
   private boolean stopped = false;
+  private boolean waiting = false;
   private int extraCycles = 0;
   private boolean branch = false;
   private long cycleCount = 0;
@@ -555,9 +556,6 @@ public class W65C02S {
       return;
     }
 
-    // Increment cyclc counter
-    cycleCount++;
-
     // If we need to inject an extra cycle, return.
     if(extraCycles != 0) {
       sync.value(false);
@@ -567,12 +565,24 @@ public class W65C02S {
 
     // Set the interrupt mode if we're resetting or interrupted
     if(!resb.value()) {
-      cycleCount = 0;
+      cycleCount = -1;
+      waiting = false;
       interruptMode = InterruptMode.RESET;
     }
-    else if(((p & INTERRUPT_DISABLE) == 0) && !irqb.value()) {
-      interruptMode = InterruptMode.IRQ;
+    else if(!irqb.value()) {
+      waiting = false;
+      if((p & INTERRUPT_DISABLE) == 0) {
+        interruptMode = InterruptMode.IRQ;
+      }
     }
+
+    // If we're (still) waiting, just return.
+    if(waiting) {
+      return;
+    }
+
+    // Increment cyclc counter
+    cycleCount++;
 
     // If the bus is enabled, latch the data bus value.
     byte data = 0;
@@ -654,7 +664,7 @@ public class W65C02S {
 
           case RTS: pc++; break;
           case STP: stopped = true; rdy().value(false); break;
-          // case WAI: waiting = true; break;
+          case WAI: waiting = true; break;
           case BRK: if(interruptMode == InterruptMode.NONE) interruptMode = InterruptMode.IRQ; break;
           default:
         }
