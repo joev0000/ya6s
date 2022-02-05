@@ -82,7 +82,7 @@ public class Smartline implements AutoCloseable {
           case START:
             switch(c) {
               case '\r': done = true; break;
-              case 0x7F:
+              case 0x08: case 0x7F:
                 if(cursor > 0) {
                   sb.deleteCharAt(--cursor);
                   // CUB, DCH
