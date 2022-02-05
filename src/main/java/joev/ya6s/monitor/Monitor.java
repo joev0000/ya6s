@@ -272,7 +272,7 @@ public class Monitor {
     Signal sync = backplane.sync();
     Signal rdy = backplane.rdy();
     rdy.register(this::stopClock);
-    Command command = NoopCommand.instance();
+    Command command = ResetCommand.instance();
     int c;
     while(true) {
       try {
