@@ -283,7 +283,12 @@ public class Monitor {
           out.println(disassemble((short)backplane.address().value(), 1));
           String string = sl.readLine(">>> ");
           parser = new MonitorParser(new StringReader(string));
-          command = parser.command();
+          try {
+            command = parser.command();
+          } catch (ParseException e) {
+            out.println(e.getMessage());
+            command = NoopCommand.instance();
+          }
         }
         command = NoopCommand.instance();
 
