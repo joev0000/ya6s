@@ -1,6 +1,6 @@
 plugins {
   id 'application'
-  id 'com.intershop.gradle.javacc' version '4.0.0'
+  id 'com.intershop.gradle.javacc' version '4.0.1'
 }
 
 application {
@@ -18,11 +18,11 @@ repositories {
 
 dependencies {
   // https://mvnrepository.com/artifact/net.java.dev.jna/jna
-  implementation group: 'net.java.dev.jna', name: 'jna', version: '5.7.0'
+  implementation group: 'net.java.dev.jna', name: 'jna', version: '5.10.0'
 
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-  testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
-  testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+  testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+  testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 compileJava {
@@ -44,7 +44,7 @@ compileTestJava {
 }
 
 javacc {
-  javaCCVersion = '7.0.9'
+  javaCCVersion = '7.0.10'
   configs {
     monitor {
       inputFile = file('src/main/java/joev/ya6s/monitor/parser.jj')
