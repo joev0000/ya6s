@@ -1,3 +1,5 @@
+; Copyright (C) 2021, 2022 Joseph Vigneau
+
         .EXPORT BUFINI
         .EXPORT BUFRD
         .EXPORT BUFWR

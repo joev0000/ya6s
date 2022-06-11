@@ -1,3 +1,5 @@
+/* Copyright (C) 2021, 2022 Joseph Vigneau */
+
 options {
   STATIC = false;
   UNICODE_INPUT = true;

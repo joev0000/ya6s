@@ -1,3 +1,5 @@
+/* Copyright (C) 2021, 2022 Joseph Vigneau */
+
 package joev.ya6s.monitor;
 
 import joev.ya6s.AddressingMode;
