@@ -14,6 +14,13 @@ import static joev.ya6s.smartline.Termios.*;
  * interactive editing of commands.
  */
 public class Smartline implements AutoCloseable {
+  private static final byte[] VT_CSI = new byte[] { 0x1B, 0x5B };
+  private static final byte[] VT_CUB = new byte[] { 0x1B, 0x5B, 0x44 };
+  private static final byte[] VT_CUF = new byte[] { 0x1B, 0x5B, 0x43 };
+  private static final byte[] VT_DCH = new byte[] { 0x1B, 0x5B, 0x50 };
+  private static final byte[] VT_EL  = new byte[] { 0x1B, 0x5B, 0x4B };
+  private static final byte[] VT_ICH = new byte[] { 0x1B, 0x5B, 0x40 };
+
   private final InputStream in;
   private final PrintStream out;
   private Termios.termios origTermios = null;
@@ -85,8 +92,8 @@ public class Smartline implements AutoCloseable {
               case 0x08: case 0x7F:
                 if(cursor > 0) {
                   sb.deleteCharAt(--cursor);
-                  // CUB, DCH
-                  out.format("%c%c%c%c", 0x9B, 0x44, 0x9B, 0x50);
+                  out.write(VT_CUB);
+                  out.write(VT_DCH);
                 }
                 break;
               case 0x1B: state = State.ESCAPE; break;
@@ -97,7 +104,7 @@ public class Smartline implements AutoCloseable {
                     sb.append((char)c);
                   }
                   else {
-                    out.format("%c%c", 0x9B, '@');
+                    out.write(VT_ICH);
                     sb.insert(cursor, (char)c);
                   }
                   out.print((char)c);
@@ -118,11 +125,16 @@ public class Smartline implements AutoCloseable {
               case 'A' -> { // CUP
                 if (historyCursor >= 0) {
                   if (cursor > 0) {
-                    out.write(String.format("\u009B%dD", cursor).getBytes());
+                    // CUB
+                    out.write(VT_CSI);
+                    out.write(Integer.toString(cursor).getBytes());
+                    out.write('D');
                   }
                   sb = new StringBuilder(history.get(historyCursor));
                   cursor = sb.length();
-                  out.write(String.format("\u009BK%s", sb).getBytes());
+                  // EL
+                  out.write(VT_EL);
+                  out.write(sb.toString().getBytes());
                   if (historyCursor > 0) {
                     historyCursor--;
                   }
@@ -133,24 +145,30 @@ public class Smartline implements AutoCloseable {
                 if (historyCursor < history.size() - 1) {
                   historyCursor++;
                   if (cursor > 0) {
-                    out.write(String.format("\u009B%dD", cursor).getBytes());
+                    // CUB
+                    out.write(VT_CSI);
+                    out.write(Integer.toString(cursor).getBytes());
+                    out.write('D');
                   }
                   sb = new StringBuilder(history.get(historyCursor));
                   cursor = sb.length();
-                  out.write(String.format("\u009BK%s", sb).getBytes());
+                  // EL
+                  out.write(VT_EL);
+                  out.write(sb.toString().getBytes());
                 }
                 state = State.START;
               }
               case 'C' -> { // CUF
                 if (cursor < sb.length()) {
-                  out.write("\u009BC".getBytes());
+                  out.write(VT_CUF);
                   cursor++;
                 }
                 state = State.START;
               }
               case 'D' -> { // CUB
                 if (cursor > 0) {
-                  out.write("\u009BD".getBytes());
+                  // CUB
+                  out.write(VT_CUB);
                   cursor--;
                 }
                 state = State.START;
