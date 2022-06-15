@@ -4,9 +4,14 @@ Yet Another 6502 Simulator (ya6s) is yet another 6502 simulator.  This one
 uses a circuit simulation model that mimics the behavior of a WDC 65C02
 microprocessor at the cycle level. It is built upon a simple digital signal
 model, which can be used to simulate other devices attached to the busses
-and processor signals via virtual backlplane. An out-of-band monitor is also
+and processor signals via virtual backplane. An out-of-band monitor is also
 included that can be used to load data from files on to the bus, as well
 as adding breakpoints and inspection commands to assist in debugging.
+
+This simulator is intended to be a software-based prototyping environment
+for a 65C02-based computer. It is designed to allow a system designer to
+include simulated hardware peripherals by monitoring the signals generated
+by the processor, and potentially other peripherals.
 
 ## Example
 
@@ -46,7 +51,6 @@ gradlew build
 ```
 
 The `build/distributions` directory will contain `ya6s.tar` and `ya6s.zip`.
-
 
 ## Usage
 
@@ -155,7 +159,35 @@ F827:  40        RTI
 $
 ```
 
-## Future Enhancements
+# Custom Devices
+
+ya6s is based on a simple digital circuit model. `Signal`s hold a boolean
+value, and interested code can subscribe to changes of the `Signal`, which
+are notified if the change was a positive edge (false to true), or a negative
+edge (true to false). A `Bus` can hold a multiple bit value.
+
+A simulated computer is based around a `Backplane`, which holds the signals
+and busses that are commonly found in 6502-based computers. Typically, these
+mirror the pins on the 6502: a 16 bit address bus, an 8 bit data bus, signals
+for read/write, interrupts, sync, and clock.
+
+The W65C02S class uses `Signal`s and `Bus`ses that closely match those of a
+real WDC 65C02S processor, and is connected to a `Backplane`. Likewise, the
+`SRAM`, `ROM`, `UART`, and `Counter` classes connect to the `Backplane` and
+subscribe to the signal change events, and update the signals accordingly.
+
+Devices do not interact with each other directly, only through the
+signals on the backplane. Typically, a device will subscribe to the `clk`
+signal on the backplane, and upon a negative edge transition, check the
+address bus to determine if the device needs to take any action. If the `rwb`
+signal is true, the device should write a value to the data bus, and if it
+is false, it should read the value from the data bus.
+
+Custom devices are no different than the included devices, and are built to
+use the same `Backplane`. The ya6s simulator can dynamically attach these to
+the backplane using the monitor's `attach` command.
+
+# Future Enhancements
 
 * Package Java runtime using `jlink`
 * Add terminal/monitor support for Windows and MacOS.
