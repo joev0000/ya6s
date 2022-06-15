@@ -13,6 +13,9 @@ for a 65C02-based computer. It is designed to allow a system designer to
 include simulated hardware peripherals by monitoring the signals generated
 by the processor, and potentially other peripherals.
 
+ya6s successfully passes Klaus Dormann's 6502 and 65C02
+[functional tests](https://github.com/Klaus2m5/6502_65C02_functional_tests)
+
 ## Example
 
 ```
@@ -192,3 +195,4 @@ the backplane using the monitor's `attach` command.
 * Package Java runtime using `jlink`
 * Add terminal/monitor support for Windows and MacOS.
 * Add TCP support to UART.
+* Address remaining cycle timing errors.
