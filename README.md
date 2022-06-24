@@ -162,6 +162,122 @@ F827:  40        RTI
 $
 ```
 
+# Monitor Commands
+
+## attach
+
+    attach {type} ({name}={value})*
+
+Attach a device to the simulated computer.  The type is a name of a class
+in the `CLASSPATH` that has a constructor that takes the arguments
+`(Backplane, Map<String, String>)`.  See the "Custom Devices" section for
+more information about how to build a custom device.  The included devices
+are
+
+* joev.ya6s.SRAM: A RAM device.  The options are `base`, which is the first
+address (in hex) within the memory map this device listens on, and `size` the
+number of bytes (in hex) of the RAM device.
+* joev.ya6s.ROM: A ROM device. The options are `base`, which is the first
+address (in hex) within the memory map this devices listens on, `size` which
+is the number of bytes (in hex) of the ROM device, and `file` which is the
+name of a file that is loaded into the ROM.
+* joev.ya6s.UART: A UART device based on the widely-used 16550 UART IC. The
+option `base` tells the device the address (in hex) of the first register.
+* joev.ya6s.Counter: An example device that counts the cycles of the computer.
+A program can set a value as 24 bit number, the base to count down, and the
+device can be configured to generate an interrupt when the counter reaches
+zero. The first three bytes are the counter value, little-endian, the fourth
+byte is the control and status register, where bit 0 is the counter enable
+flag, bit 2 is the interrupt enable flag, bit 6 indicates if the counter
+is zero. Bit 6 is used since the 6502 BIT instruction sets the overflow flag
+based on bit 6. This device has a `base` option which is the address (in hex)
+of the first register.
+
+## breakpoint
+
+    break list
+    break remove {index}
+    break at {address}
+    break when {expression}
+
+Manage breakpoints.  `break at` enables a breakpoint at the specified
+address. `break when` enables a breakpoint when the expression evaluates to
+true. `break list` lists the enabled breakpoints, `break remove` removes a
+breakpoint.  Breakpoint expressions are of the form `{constant|register} {op}
+{constant|register}`.  The supported registers are PC, A, X, Y, C, N, Z, V, I,
+and D. The supported operations are =, >, <, !=, >=, and <=.
+
+## cont
+
+    cont
+
+The cont command resumes the program when the program as stopped or paused
+using Ctrl-E.
+
+## disassemble
+
+    disassemble ({address} ({count})?)?
+
+Disassembles the program instructions. If no address is given, the program
+starting at PC is disassembled.  If no count is given, the next 5 instructions
+are disassembled.
+
+## exit
+
+    exit
+
+Exits ya6s.
+
+## load
+
+    load {start} {path}
+
+Loads the bytes from the file at the given path, to the start address (in hex).
+This command disables the CPU, and cycles the clock while sequentially
+placing the bytes on the data bus while incrementing the address bus.
+Typically this will be used with the address a RAM-like device, but this
+command will write to whatever device appears at that address.
+
+## profile
+
+    profile on
+    profile off
+    profile show ({maxLines})?
+    profile reset
+
+Track the addresses which are being executed.  `profile on` enables tracking
+each address where an instruction is read from.  `profile off` disables this
+tracking.  `profile show` shows which addresses have been executed, sorted by
+the number of times the address was executed.  `profile reset` resets the
+profile counter.
+
+## read
+
+    read {start} ({end})?
+
+Reads the data from the memory map from the start address, to the end address.
+If no end address is specified, one page (256 bytes) is read.
+
+## reset
+
+    reset
+
+Toggles the reset pin on the processor, initiating the reset procedure. This
+reads the contents of memory locations $FFFC and $FFFD, and jumps to the
+location contained in those memory locations.
+
+## step
+
+    step
+
+Executes a single instruction.
+
+## write
+
+    write {start} ({value})*
+
+Writes the values to memory starting at the given start address.
+
 # Custom Devices
 
 ya6s is based on a simple digital circuit model. `Signal`s hold a boolean
@@ -189,6 +305,17 @@ is false, it should read the value from the data bus.
 Custom devices are no different than the included devices, and are built to
 use the same `Backplane`. The ya6s simulator can dynamically attach these to
 the backplane using the monitor's `attach` command.
+
+A custom device must have a public constructor that takes the arguments
+`(joev.ya6s.Backplane backplane, Map<String, String> options)`. It does not
+need to extend any other class or implement any interface. The constructor
+should register itself with the appropriate `Signal`s of the backplane, in
+particular, the `clk` clock signal.  Typically, a device will have a `tick`
+method, which is registered to listen to changes of the `clk` clock signal.
+The `tick` method will check the address bus and determine if the address
+corresponds to the device. If so, the `rwb` (read/not-write) flag is checked,
+and the data bus is either written to or read from, and the appropriate
+action taken.
 
 # Future Enhancements
 
