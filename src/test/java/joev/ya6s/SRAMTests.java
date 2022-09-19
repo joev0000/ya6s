@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -15,7 +14,6 @@ import joev.ya6s.signals.Signal;
  * Tests for the SRAM device.
  */
 public class SRAMTests {
-  private SRAM sram;
   private Backplane backplane;
   private Clock clock;
   private Signal rwb;
@@ -83,7 +81,7 @@ public class SRAMTests {
    */
   @Test
   void test32k() {
-    sram = new SRAM(backplane, (short)0, 0x8000);
+    new SRAM(backplane, (short)0, 0x8000);
 
     check(0x0000, true);
     check(0x7FFF, true);
@@ -95,7 +93,7 @@ public class SRAMTests {
    */
   @Test
   void test48k() {
-    sram = new SRAM(backplane, (short)0, 0xC000);
+    new SRAM(backplane, (short)0, 0xC000);
 
     check(0x0000, true);
     check(0xBFFF, true);
@@ -110,7 +108,7 @@ public class SRAMTests {
   void nonNonStandardBaseAndSize() {
     int base = 0x8123;
     int size = 0x1234;
-    sram = new SRAM(backplane, (short)base, size);
+    new SRAM(backplane, (short)base, size);
     check(base - 1,        false);
     check(base,            true);
     check(base + size - 1, true);

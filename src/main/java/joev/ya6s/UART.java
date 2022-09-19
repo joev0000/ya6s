@@ -51,13 +51,15 @@ import java.util.Map;
  * </code>
  */
 public class UART {
+  private final static short addressMask = (short)0xFFF8;
+  private final static double frequency = 18432000d; // 18.432MHz crystal
+
   private final Backplane backplane;
 
   private final Bus address;
   private final Bus data;
   private final Signal.Listener tickFn;
   private final short baseAddress;
-  private final short addressMask = (short)0xFFF8;
 
   private final Thread xmitThread;
   private final byte[] xmitFifo = new byte[16];
@@ -69,7 +71,6 @@ public class UART {
   private int recvHead = 0;
   private int recvTail = 0;
 
-  private final double frequency = 18432000d; // 18.432MHz crystal
   private int delayMillis = 0;
   private int delayNanos = 0;
 
@@ -118,28 +119,28 @@ public class UART {
   // LSR bits
 
   /** Data Ready */
-  private final byte DR   = 0x01;
+  private final static byte DR   = 0x01;
 
   /** Overrun Error */
-  private final byte OE   = 0x02;
+  private final static byte OE   = 0x02;
 
   /** Parity Error */
-  private final byte PE   = 0x04;
+  private final static byte PE   = 0x04;
 
   /** Framing Error */
-  private final byte FE   = 0x08;
+  private final static byte FE   = 0x08;
 
   /** Break Interrupt */
-  private final byte BI   = 0x10;
+  private final static byte BI   = 0x10;
 
   /** Transmitter Holding Register Empty */
-  private final byte THRE = 0x20;
+  private final static byte THRE = 0x20;
 
   /** Transmitter Empty */
-  private final byte TEMT = 0x40;
+  private final static byte TEMT = 0x40;
 
   /** Error in Receiver FIFO */
-  private final byte LSR7 = (byte)0x80;
+  private final static byte LSR7 = (byte)0x80;
 
   /**
    * Create a UART on the given Backplane, with the given base address and I/O streams.
@@ -400,7 +401,7 @@ public class UART {
         // If the THRE Interrupt is enabled, clear the interrupt.
         updateInterruptStatus();
       }
-      xmitFifo.notify();
+      xmitFifo.notifyAll();
     }
   }
 

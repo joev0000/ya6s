@@ -1,6 +1,7 @@
 plugins {
   id 'application'
   id 'com.intershop.gradle.javacc' version '4.0.1'
+  id 'com.github.spotbugs' version '5.0.12'
 }
 
 application {
@@ -60,4 +61,9 @@ run {
 
 test {
   useJUnitPlatform()
+}
+
+spotbugs {
+  excludeFilter = file("spotbugs-exclude.xml")
+  reportLevel = 'low'
 }

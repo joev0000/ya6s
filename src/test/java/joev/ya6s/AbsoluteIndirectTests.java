@@ -12,13 +12,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class AbsoluteIndirectTests {
   private Backplane backplane;
   private W65C02S cpu;
-  private SRAM ram;
 
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
     cpu = new W65C02S(backplane);
-    ram = new SRAM(backplane);
+    new SRAM(backplane);
 
     TestUtils.load(backplane, cpu, 0x3000, """
       A9 42 ; LDA #$42

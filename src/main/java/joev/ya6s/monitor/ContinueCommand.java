@@ -2,10 +2,8 @@
 
 package joev.ya6s.monitor;
 
-import joev.ya6s.Backplane;
 import joev.ya6s.Clock;
 import joev.ya6s.W65C02S;
-import joev.ya6s.signals.Signal;
 
 /**
  * The Continue command.
@@ -35,7 +33,6 @@ public class ContinueCommand implements Command {
    */
   @Override
   public Command execute(Monitor monitor) {
-    Backplane backplane = monitor.backplane();
     Clock clock = monitor.clock();
     W65C02S cpu = monitor.cpu();
 

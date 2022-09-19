@@ -16,7 +16,7 @@ public class LogicExpression implements Predicate<W65C02S> {
   enum Op {
     AND ("AND", (a, b) -> a && b),
     OR  ("OR",  (a, b) -> a || b),
-    XOR ("XOR", (a, b) -> a != b);
+    XOR ("XOR", (a, b) -> a.booleanValue() != b.booleanValue());
 
     private final String symbol;
     private final BiPredicate<Boolean, Boolean> predicate;

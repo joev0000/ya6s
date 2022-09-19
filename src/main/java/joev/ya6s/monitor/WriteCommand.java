@@ -21,7 +21,7 @@ public class WriteCommand implements Command {
    */
   public WriteCommand(short start, byte[] data) {
     this.start = start;
-    this.data = data;
+    this.data = data.clone();
   }
 
   /**

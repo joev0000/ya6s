@@ -15,8 +15,11 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A monitor for a system with a CPU and Backplane.
@@ -51,7 +54,7 @@ public class Monitor {
     this.backplane = backplane;
     this.clock = clock;
     this.cpu = cpu;
-    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
+    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out, true, UTF_8);
     this.console = console;
     sl = new Smartline(in, out);
   }
@@ -84,7 +87,7 @@ public class Monitor {
    * @return the list of breakpoints.
    */
   public List<Predicate<W65C02S>> listBreakpoints() {
-    return breakpoints;
+    return Collections.unmodifiableList(breakpoints);
   }
 
   /**
@@ -160,7 +163,7 @@ public class Monitor {
    * @return the profile cycle count metric array.
    */
   public long[] profile() {
-    return profile;
+    return profile.clone();
   }
 
   /**
@@ -316,6 +319,9 @@ public class Monitor {
         else {
           out.println(rdy.value() ? "Paused." : "Stopped.");
         }
+      }
+      catch (RuntimeException e) {
+        throw e;
       }
       catch (Exception e) {
         out.format("ERROR: %s%n", e.getMessage());

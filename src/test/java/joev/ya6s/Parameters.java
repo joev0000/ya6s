@@ -27,7 +27,7 @@ public class Parameters {
   public String name() { return name; }
   public String program() { return program; }
   public int cycles() { return cycles; }
-  public Consumer<W65C02S>[] asserts() { return asserts; }
+  public Consumer<W65C02S>[] asserts() { return asserts.clone(); }
   public String toString() { return name; }
 
   @SafeVarargs

@@ -9,7 +9,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static joev.ya6s.smartline.Termios.*;
+
 
 /**
  * Smartline is a raw-mode command line helper tool, providing lightweight
@@ -38,7 +40,7 @@ public class Smartline implements AutoCloseable {
    */
   public Smartline(InputStream in, OutputStream out) {
     this.in = in;
-    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out);
+    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out, true, UTF_8);
 
     if(in.equals(System.in)) {
       Termios.termios termios = new Termios.termios();
@@ -129,14 +131,14 @@ public class Smartline implements AutoCloseable {
                   if (cursor > 0) {
                     // CUB
                     out.write(VT_CSI);
-                    out.write(Integer.toString(cursor).getBytes());
+                    out.write(Integer.toString(cursor).getBytes(UTF_8));
                     out.write('D');
                   }
                   sb = new StringBuilder(history.get(historyCursor));
                   cursor = sb.length();
                   // EL
                   out.write(VT_EL);
-                  out.write(sb.toString().getBytes());
+                  out.write(sb.toString().getBytes(UTF_8));
                   if (historyCursor > 0) {
                     historyCursor--;
                   }
@@ -149,14 +151,14 @@ public class Smartline implements AutoCloseable {
                   if (cursor > 0) {
                     // CUB
                     out.write(VT_CSI);
-                    out.write(Integer.toString(cursor).getBytes());
+                    out.write(Integer.toString(cursor).getBytes(UTF_8));
                     out.write('D');
                   }
                   sb = new StringBuilder(history.get(historyCursor));
                   cursor = sb.length();
                   // EL
                   out.write(VT_EL);
-                  out.write(sb.toString().getBytes());
+                  out.write(sb.toString().getBytes(UTF_8));
                 }
                 state = State.START;
               }
@@ -173,6 +175,9 @@ public class Smartline implements AutoCloseable {
                   out.write(VT_CUB);
                   cursor--;
                 }
+                state = State.START;
+              }
+              default -> {
                 state = State.START;
               }
             }
@@ -225,7 +230,7 @@ public class Smartline implements AutoCloseable {
       String s;
       while(!(s = sl.readLine(">>> ")).equals("exit")) {
         System.out.format("I read: %s [ ", s);
-        byte[] b = s.getBytes();
+        byte[] b = s.getBytes(UTF_8);
         for (byte value : b) {
           System.out.format("%02X ", value);
         }

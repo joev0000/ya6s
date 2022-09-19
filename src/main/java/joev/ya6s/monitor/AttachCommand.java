@@ -23,7 +23,7 @@ public class AttachCommand implements Command {
    */
   public AttachCommand(String typeName, Map<String, String> options) {
     this.typeName = typeName;
-    this.options = options;
+    this.options = Map.copyOf(options);
   }
 
   /**

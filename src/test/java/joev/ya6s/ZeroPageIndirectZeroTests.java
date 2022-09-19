@@ -12,13 +12,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class ZeroPageIndirectZeroTests {
   private Backplane backplane;
   private W65C02S cpu;
-  private SRAM ram;
 
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
     cpu = new W65C02S(backplane);
-    ram = new SRAM(backplane);
+    new SRAM(backplane);
 
     TestUtils.load(backplane, cpu, 0x0040, "20 12");
     TestUtils.load(backplane, cpu, 0x1220, "42");

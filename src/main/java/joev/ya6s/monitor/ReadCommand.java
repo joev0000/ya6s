@@ -16,7 +16,7 @@ public class ReadCommand implements Command {
    * command. Uses a simple mapping of the Unicode Latin-1 Supplemental
    * to bytes 128 through 255.
    */
-  public final static char[] ascii = {
+  private final static char[] ascii = {
     '.', '.', '.', '.', '.', '.', '.', '.',  '.', '.', '.', '.', '.', '.', '.', '.',
     '.', '.', '.', '.', '.', '.', '.', '.',  '.', '.', '.', '.', '.', '.', '.', '.',
     ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',

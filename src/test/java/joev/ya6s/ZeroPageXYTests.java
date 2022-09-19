@@ -12,13 +12,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class ZeroPageXYTests {
   private Backplane backplane;
   private W65C02S cpu;
-  private SRAM ram;
 
   @BeforeEach
   void beforeEach() {
     backplane = new Backplane();
     cpu = new W65C02S(backplane);
-    ram = new SRAM(backplane);
+    new SRAM(backplane);
   }
 
   @ParameterizedTest

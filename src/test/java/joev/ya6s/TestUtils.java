@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.function.Consumer;
 
-import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -78,7 +77,7 @@ public class TestUtils {
   public static void executeTest(Parameters params) {
     Backplane backplane = new Backplane();
     W65C02S cpu = new W65C02S(backplane);
-    SRAM ram = new SRAM(backplane);
+    new SRAM(backplane);
 
     executeTest(params, backplane, cpu);
   }

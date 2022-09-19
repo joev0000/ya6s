@@ -321,14 +321,14 @@ public class W65C02S {
     public short vector() { return vector; }
   }
 
-  private final byte NEGATIVE          = (byte)0b10000000;
-  private final byte OVERFLOW          = (byte)0b01000000;
-  private final byte RESERVED          = (byte)0b00100000;
-  private final byte BREAK             = (byte)0b00010000;
-  private final byte DECIMAL           = (byte)0b00001000;
-  private final byte INTERRUPT_DISABLE = (byte)0b00000100;
-  private final byte ZERO              = (byte)0b00000010;
-  private final byte CARRY             = (byte)0b00000001;
+  private final static byte NEGATIVE          = (byte)0b10000000;
+  private final static byte OVERFLOW          = (byte)0b01000000;
+  private final static byte RESERVED          = (byte)0b00100000;
+  private final static byte BREAK             = (byte)0b00010000;
+  private final static byte DECIMAL           = (byte)0b00001000;
+  private final static byte INTERRUPT_DISABLE = (byte)0b00000100;
+  private final static byte ZERO              = (byte)0b00000010;
+  private final static byte CARRY             = (byte)0b00000001;
 
   private short pc;
   private byte a;

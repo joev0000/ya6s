@@ -8,15 +8,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import joev.ya6s.Backplane;
-import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
 
@@ -25,7 +22,6 @@ import joev.ya6s.signals.Signal;
  * Tests for the ROM device.
  */
 public class ROMTests {
-  private ROM rom;
   private Backplane backplane;
   private Clock clock;
   private Signal rwb;
@@ -98,7 +94,7 @@ public class ROMTests {
           "base", "E000",
           "size", "2000",
           "file", path.toString());
-      rom = new ROM(backplane, options);
+      new ROM(backplane, options);
 
       check(0xDFFF, false);
       check(0xE000, true);
