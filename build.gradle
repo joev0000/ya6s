@@ -33,7 +33,6 @@ compileJava {
     '-Xlint:all',
     '-Xlint:-requires-automatic',
     '-Xlint:-requires-transitive-automatic',
-    '-Xlint:-cast',  // TODO: Remove this when using JavaCC >7.0.11
     '-Werror']
 }
 
@@ -46,7 +45,7 @@ compileTestJava {
 }
 
 javacc {
-  javaCCVersion = '7.0.11'
+  javaCCVersion = '7.0.12'
   configs {
     monitor {
       inputFile = file('src/main/java/joev/ya6s/monitor/parser.jj')
