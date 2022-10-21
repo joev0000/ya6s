@@ -2,6 +2,7 @@
 
 package joev.ya6s.expression;
 
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -49,6 +50,24 @@ public class RelationalExpression implements Predicate<W65C02S> {
     @Override
     public String toString() {
       return symbol;
+    }
+
+    /**
+     * Attempt to return an Op from a String.
+     *
+     * @param s the String that matches the name of the Op.
+     * @return an Optional containing the Op if the String matches.
+    */
+    public static Optional<Op> maybeFrom(String s) {
+      return switch(s) {
+        case "=" -> Optional.of(EQUALS);
+        case "!=" -> Optional.of(NOT_EQUALS);
+        case ">" -> Optional.of(GREATER_THAN);
+        case "<" -> Optional.of(LESS_THAN);
+        case ">=" -> Optional.of(GREATER_THAN_OR_EQUALS);
+        case "<=" -> Optional.of(LESS_THAN_OR_EQUALS);
+        default -> Optional.empty();
+      };
     }
   }
 

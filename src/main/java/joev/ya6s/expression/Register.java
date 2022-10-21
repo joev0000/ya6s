@@ -2,6 +2,8 @@
 
 package joev.ya6s.expression;
 
+import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Function;
 
 import joev.ya6s.W65C02S;
@@ -58,6 +60,29 @@ public class Register implements Function<W65C02S, Integer> {
   private final String name;
   private final Function<W65C02S, Integer> fn;
 
+  /**
+   * Convenience function to get a Register from its name.
+   * 
+   * @param s the name of the Register
+   * @return An Optional that contains the Register, or an empty if there
+   *         is no Register with the requested name.
+  */
+  public static final Optional<Register> maybeFrom(String s) {
+    return switch(s.toUpperCase(Locale.ROOT)) {
+      case "PC" -> Optional.of(PC);
+      case "A" -> Optional.of(A);
+      case "X" -> Optional.of(X);
+      case "Y" -> Optional.of(Y);
+      case "S" -> Optional.of(S);
+      case "C" -> Optional.of(C);
+      case "Z" -> Optional.of(Z);
+      case "V" -> Optional.of(V);
+      case "N" -> Optional.of(N);
+      case "I" -> Optional.of(I);
+      case "D" -> Optional.of(D);
+      default -> Optional.empty();
+    };
+  }
 
   /**
    * Create a new Register.  This is a private constructor.
@@ -88,7 +113,6 @@ public class Register implements Function<W65C02S, Integer> {
    */
   @Override
   public String toString() {
-   // return register.toString();
    return name;
   }
 }

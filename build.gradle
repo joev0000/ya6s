@@ -1,6 +1,5 @@
 plugins {
   id 'application'
-  id 'com.intershop.gradle.javacc' version '4.0.1'
   id 'com.github.spotbugs' version '5.0.12'
 }
 
@@ -42,16 +41,6 @@ compileTestJava {
     '-Xlint:-requires-automatic',
     '-Xlint:-requires-transitive-automatic',
     '-Werror']
-}
-
-javacc {
-  javaCCVersion = '7.0.12'
-  configs {
-    monitor {
-      inputFile = file('src/main/java/joev/ya6s/monitor/parser.jj')
-      packageName = 'joev.ya6s.monitor'
-    }
-  }
 }
 
 run {
