@@ -2,6 +2,8 @@
 
 package joev.ya6s.monitor;
 
+import java.util.Objects;
+
 /**
  * Monitor command to provide disassembly of part of the program.
  */
@@ -31,5 +33,29 @@ public class DisassembleCommand implements Command {
   public Command execute(Monitor monitor) {
     System.out.println(monitor.disassemble(address, count));
     return null;
+  }
+
+  /**
+   * Compare this DissassembleCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a DissassembleCommand with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof DisassembleCommand o) {
+      return this.address == o.address && this.count == o.count;
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this DissassembleCommand.
+   *
+   * @return the hash code of this DissassembleCommand.
+   */
+  @Override
+  public int hashCode() {
+    return Objects.hash(address, count);
   }
 }

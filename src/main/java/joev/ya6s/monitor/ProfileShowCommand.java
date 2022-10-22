@@ -45,4 +45,28 @@ public class ProfileShowCommand implements Command {
 
     return null;
   }
+
+  /**
+   * Compare this ProfileShowCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a ProfileShowCommand with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof ProfileShowCommand o) {
+      return this.maxLines == o.maxLines;
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this ProfileShowCommand.
+   *
+   * @return the hash code of this ProfileShowCommand.
+   */
+  @Override
+  public int hashCode() {
+    return maxLines;
+  }
 }

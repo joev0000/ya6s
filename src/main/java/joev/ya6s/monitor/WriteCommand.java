@@ -2,6 +2,8 @@
 
 package joev.ya6s.monitor;
 
+import java.util.Objects;
+
 import joev.ya6s.Backplane;
 import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
@@ -66,5 +68,29 @@ public class WriteCommand implements Command {
       sb.append(String.format(" %02X", datum));
     }
     return sb.toString();
+  }
+
+  /**
+   * Compare this WriteCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a WriteCommand with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof WriteCommand o) {
+      return this.start == o.start && Objects.deepEquals(this.data, o.data);
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this WriteCommand.
+   *
+   * @return the hash code of this WriteCommand.
+   */
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.start, this.data);
   }
 }

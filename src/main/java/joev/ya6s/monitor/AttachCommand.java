@@ -4,6 +4,7 @@ package joev.ya6s.monitor;
 
 import java.lang.reflect.Constructor;
 import java.util.Map;
+import java.util.Objects;
 
 import joev.ya6s.Backplane;
 
@@ -43,5 +44,29 @@ public class AttachCommand implements Command {
       System.out.format("error: %s: %s%n", e.getClass().getName(), e.getMessage());
     }
     return null;
+  }
+
+  /**
+   * Compare this AttachCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is an AttachCommand with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof AttachCommand o) {
+      return this.typeName.equals(o.typeName) && this.options.equals(o.options);
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this AttachCommand.
+   *
+   * @return the hash code of this AttachCommand.
+   */
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.typeName, this.options);
   }
 }

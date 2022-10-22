@@ -26,4 +26,28 @@ public class BreakpointRemoveCommand implements Command {
     monitor.removeBreakpoint(index);
     return null;
   }
+
+  /**
+   * Compare this BreakpointRemoveCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a BreakpointRemoveCommand with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof BreakpointRemoveCommand o) {
+      return this.index == o.index;
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this BreakpointRemoveCommand.
+   *
+   * @return the hash code of this BreakpointRemoveCommand.
+   */
+  @Override
+  public int hashCode() {
+    return index;
+  }
 }

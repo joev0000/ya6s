@@ -11,14 +11,14 @@ import joev.ya6s.W65C02S;
  * of the state of the CPU.
  */
 public class Constant implements Function<W65C02S, Integer> {
-  private final Integer value;
+  private final int value;
 
   /**
    * Create a new constant that always returns the provided value.
    *
    * @param value the value of the constant.
    */
-  public Constant(Integer value) {
+  public Constant(int value) {
     this.value = value;
   }
 
@@ -30,7 +30,7 @@ public class Constant implements Function<W65C02S, Integer> {
    */
   @Override
   public Integer apply(W65C02S cpu) {
-    return value;
+    return Integer.valueOf(value);
   }
 
   /**
@@ -41,6 +41,30 @@ public class Constant implements Function<W65C02S, Integer> {
   @Override
   public String toString() {
     return Integer.toHexString(value);
+  }
+
+  /**
+   * Compare this Constant with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a Constant with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof Constant o) {
+      return this.value == o.value;
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this Constant.
+   *
+   * @return the hash code of this Constant.
+   */
+  @Override
+  public int hashCode() {
+    return this.value;
   }
 }
 

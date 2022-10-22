@@ -32,4 +32,33 @@ public class BreakpointWhenCommand implements Command {
     monitor.addBreakpoint(predicate);
     return null;
   }
+
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof BreakpointWhenCommand o) {
+      return this.predicate.equals(o.predicate);
+    }
+    return false;
+  }
+
+  /**
+   * Compare this BreakpointWhenCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a BreakpointWhenCommand with the same value.
+   */
+  @Override
+  public int hashCode() {
+    return predicate.hashCode();
+  }
+
+  /**
+   * Return the hash code of this BreakpointWhenCommand.
+   *
+   * @return the hash code of this BreakpointWhenCommand.
+   */
+  @Override
+  public String toString() {
+    return predicate.toString();
+  }
 }

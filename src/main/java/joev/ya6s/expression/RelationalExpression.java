@@ -2,6 +2,7 @@
 
 package joev.ya6s.expression;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -108,5 +109,30 @@ public class RelationalExpression implements Predicate<W65C02S> {
   @Override
   public String toString() {
     return String.format("%s %s %s", a, op, b);
+  }
+
+  /**
+   * Compare this RelationalExpression with another {@link Object}
+   *
+   * @param other the other Object to compare
+   * @return true if the other object is a RelationalExpression with the same
+   *   operation and subexpressions.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof RelationalExpression o) {
+      return this.op == o.op && Objects.equals(this.a, o.a) && Objects.equals(this.b, o.b);
+    }
+    return false;
+  }
+
+  /**
+   * Return a hash code for this RelationalExpression.
+   *
+   * @return a hash code for this RelationalExpression.
+   */
+  @Override
+  public int hashCode() {
+    return Objects.hash(op, a, b);
   }
 }

@@ -2,6 +2,8 @@
 
 package joev.ya6s.monitor;
 
+import java.util.Objects;
+
 import joev.ya6s.Backplane;
 import joev.ya6s.Clock;
 import joev.ya6s.signals.Bus;
@@ -127,5 +129,29 @@ public class ReadCommand implements Command {
   @Override
   public String toString() {
     return String.format("read %04X %04X", start, end);
+  }
+
+  /**
+   * Compare this ReadCommand with another Object.
+   *
+   * @param other the other Object to compare
+   * @return true if the other Object is a ReadCommand with the same value.
+   */
+  @Override
+  public boolean equals(Object other) {
+    if(other instanceof ReadCommand o) {
+      return this.start == o.start && this.end == o.end;
+    }
+    return false;
+  }
+
+  /**
+   * Return the hash code of this ReadCommand.
+   *
+   * @return the hash code of this ReadCommand.
+   */
+  @Override
+  public int hashCode() {
+    return Objects.hash(start, end);
   }
 }
