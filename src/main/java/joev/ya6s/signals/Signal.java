@@ -34,7 +34,9 @@ public class Signal {
   }
 
   private final String name;
-  private List<Listener> listeners = Collections.emptyList();
+  private Listener[] listeners = new Listener[8];
+  private int listenerCount = 0;
+
   private boolean value;
 
   /**
@@ -82,8 +84,8 @@ public class Signal {
       eventType = EventType.NEGATIVE_EDGE;
     }
     if(eventType != null) {
-      for(Listener listener: listeners) {
-        listener.event(eventType);
+      for(int i = 0; i < listenerCount; i++) {
+        listeners[i].event(eventType);
       }
     }
   }
@@ -94,8 +96,13 @@ public class Signal {
    * @param listener a Listener to notify when the Signal changes.
    */
   public void register(Listener listener) {
-    listeners = new ArrayList<Listener>(listeners);
-    listeners.add(listener);
+    if(listenerCount == listeners.length) {
+      Listener[] newListeners = new Listener[listenerCount + 8];
+      System.arraycopy(listeners, 0, newListeners, 0, listenerCount);
+      listeners = newListeners;
+    }
+    listeners[listenerCount] = listener;
+    listenerCount++;
   }
 
   /**
@@ -104,8 +111,13 @@ public class Signal {
    * @param listener a Listener to no longer notify.
    */
   public void unregister(Listener listener) {
-    listeners = new ArrayList<Listener>(listeners);
-    listeners.remove(listener);
+    for(int i = 0; i < listenerCount; i++) {
+      if(listeners[i] == listener) {
+        System.arraycopy(listeners, i+1, listeners, i, listenerCount - i - 1);
+        listenerCount--;
+        break;
+      }
+    }
   }
 
   /**

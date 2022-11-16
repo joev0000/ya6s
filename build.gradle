@@ -6,6 +6,7 @@ plugins {
 application {
   mainModule = 'joev.ya6s'
   mainClass = 'joev.ya6s.Main'
+  applicationDefaultJvmArgs = ['-Djava.lang.Integer.IntegerCache.high=65535']
 }
 
 java {

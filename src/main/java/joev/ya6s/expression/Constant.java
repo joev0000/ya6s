@@ -11,7 +11,7 @@ import joev.ya6s.W65C02S;
  * of the state of the CPU.
  */
 public class Constant implements Function<W65C02S, Integer> {
-  private final int value;
+  private final Integer value;
 
   /**
    * Create a new constant that always returns the provided value.
@@ -19,7 +19,7 @@ public class Constant implements Function<W65C02S, Integer> {
    * @param value the value of the constant.
    */
   public Constant(int value) {
-    this.value = value;
+    this.value = Integer.valueOf(value);
   }
 
   /**
@@ -30,7 +30,7 @@ public class Constant implements Function<W65C02S, Integer> {
    */
   @Override
   public Integer apply(W65C02S cpu) {
-    return Integer.valueOf(value);
+    return value;
   }
 
   /**
@@ -52,7 +52,7 @@ public class Constant implements Function<W65C02S, Integer> {
   @Override
   public boolean equals(Object other) {
     if(other instanceof Constant o) {
-      return this.value == o.value;
+      return this.value.equals(o.value);
     }
     return false;
   }
