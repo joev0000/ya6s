@@ -1,7 +1,10 @@
 plugins {
   id 'application'
-  id 'com.github.spotbugs' version '5.0.12'
+  id 'com.github.spotbugs' version '6.0.8'
+  id 'org.beryx.jlink' version '3.0.1'
 }
+
+version = '1.1.0-pre'
 
 application {
   mainModule = 'joev.ya6s'
@@ -19,17 +22,18 @@ repositories {
 
 dependencies {
   // https://mvnrepository.com/artifact/net.java.dev.jna/jna
-  implementation group: 'net.java.dev.jna', name: 'jna', version: '5.11.0'
+  implementation group: 'net.java.dev.jna', name: 'jna', version: '5.14.0'
 
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-  testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
-  testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+  testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
+  testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+  testRuntimeOnly    'org.junit.platform:junit-platform-launcher'
 }
 
 compileJava {
   options.compilerArgs += [
-    '-g',
     '-encoding', 'UTF-8',
+    '--release', '17',
     '-Xlint:all',
     '-Xlint:-requires-automatic',
     '-Xlint:-requires-transitive-automatic',
@@ -54,5 +58,13 @@ test {
 
 spotbugs {
   excludeFilter = file("spotbugs-exclude.xml")
-  reportLevel = 'low'
+}
+
+jlink {
+  options = ['--no-header-files', '--no-man-pages', '--strip-debug']
+  mergedModuleName = 'joev.ya6s.merged'
+  imageName = name + '-' + version
+  mergedModule {
+    excludeRequires 'java.desktop'
+  }
 }
