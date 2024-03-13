@@ -655,7 +655,7 @@ public class W65C02S {
           case ROR: if(addressingModes[opcode] == ACCUMULATOR) { a = doROR(a); } else { data = doROR(data); } break;
           case INC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(++a); } else { setNZ(++data); } break;
           case DEC: if(addressingModes[opcode] == ACCUMULATOR) { setNZ(--a); } else { setNZ(--data); } break;
-          case TRB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data &= ~a; break;
+          case TRB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data &= (byte)~a; break;
           case TSB: p = (byte)(((a & data) == 0) ? p | ZERO : p & ~ZERO); data |=  a; break;
 
           case BBR: branch = (data & (1 << ((op >> 4) & 0x07))) == 0; break;
@@ -701,7 +701,7 @@ public class W65C02S {
             if((p & DECIMAL) == 0) {
               byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
               setCV(a, data);
-              a += data + c;
+              a += (byte)(data + c);
             }
             else {
               extraCycles++;
@@ -714,7 +714,7 @@ public class W65C02S {
             if((p & DECIMAL) == 0) {
               byte c = (byte)((p & CARRY) == 0 ? 0 : 1);
               setCV(a, (byte)(~data));
-              a += (byte)(~data) + c;
+              a += (byte)(~data + c);
             }
             else {
               extraCycles++;

@@ -10,7 +10,7 @@ import joev.ya6s.signals.Signal;
 /**
  * An implementation of a static RAM module.
  */
-public class SRAM {
+public final class SRAM {
   private final Bus address;
   private final Bus data;
   private final Signal rwb;

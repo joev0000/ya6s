@@ -50,7 +50,7 @@ import java.util.Map;
  *
  * </code>
  */
-public class UART {
+public final class UART {
   private final static short addressMask = (short)0xFFF8;
   private final static double frequency = 18432000d; // 18.432MHz crystal
 

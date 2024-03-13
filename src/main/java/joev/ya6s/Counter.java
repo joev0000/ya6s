@@ -53,7 +53,7 @@ import joev.ya6s.signals.Signal;
  *         STP                     ; Halt
  * </code>
  */
-public class Counter {
+public final class Counter {
   private final Backplane backplane;
   private final short baseAddress;
   private final Signal.Listener tickFn;

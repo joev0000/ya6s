@@ -14,7 +14,7 @@ import joev.ya6s.signals.Signal;
 /**
  * An implementation of a ROM module.
  */
-public class ROM {
+public final class ROM {
   private final Bus address;
   private final Bus data;
   private final Signal rwb;

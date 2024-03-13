@@ -13,7 +13,7 @@ import java.util.Optional;
  *
  * Produces a stream of Tokens for the parser.
  */
-public class Tokenizer {
+public final class Tokenizer {
   private final PushbackReader input;
 
   /**

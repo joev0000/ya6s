@@ -17,7 +17,7 @@ import static joev.ya6s.smartline.Termios.*;
  * Smartline is a raw-mode command line helper tool, providing lightweight
  * interactive editing of commands.
  */
-public class Smartline implements AutoCloseable {
+public final class Smartline implements AutoCloseable {
   private static final byte[] VT_CSI = new byte[] { 0x1B, 0x5B };
   private static final byte[] VT_CUB = new byte[] { 0x1B, 0x5B, 0x44 };
   private static final byte[] VT_CUF = new byte[] { 0x1B, 0x5B, 0x43 };

@@ -8,7 +8,7 @@ import joev.ya6s.signals.Signal;
  * The Clock is responsible for cycling a Signal between the true and false
  * states.
  */
-public class Clock {
+public final class Clock {
   private final Signal clock;
   private Thread thread = null;
 

@@ -26,7 +26,7 @@ import joev.ya6s.expression.RelationalExpression;
 /**
  * Parser for Monitor commands.
  */
-public class MonitorParser {
+public final class MonitorParser {
   /**
    * Utility method to create a Supplier that creates a ParseException
    * with the given message.
