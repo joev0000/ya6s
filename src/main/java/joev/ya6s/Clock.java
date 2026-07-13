@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022 Joseph Vigneau */
+/* Copyright (C) 2021-2026 Joseph Vigneau */
 
 package joev.ya6s;
 
@@ -44,8 +44,10 @@ public final class Clock {
    * @param frequency the maximum frequency in hertz.
    */
   public void frequency(double frequency) {
-    delayMillis = (long)Math.floor(1000d/frequency);
-    delayNanos =  (int)((1000000000d/frequency) - (delayMillis * 1000000d));
+    synchronized(this) {
+      delayMillis = (long)Math.floor(1000d/frequency);
+      delayNanos =  (int)((1000000000d/frequency) - (delayMillis * 1000000d));
+    }
   }
 
   /**
