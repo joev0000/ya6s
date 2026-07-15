@@ -15,20 +15,20 @@ setting breakpoints, and inspecting the running system.
 ```
 ./gradlew build              # full build (compiles, tests, spotbugs, produces build/distributions/ya6s.tar|zip)
 ./gradlew test                # run all tests
-./gradlew test --tests "joev.ya6s.AbsoluteTests"              # run one test class
-./gradlew test --tests "joev.ya6s.AbsoluteTests.test"         # run one parameterized test method (all cases)
+./gradlew test --tests "org.joev.ya6s.AbsoluteTests"              # run one test class
+./gradlew test --tests "org.joev.ya6s.AbsoluteTests.test"         # run one parameterized test method (all cases)
 ./gradlew spotbugsMain spotbugsTest   # static analysis (spotbugs-exclude.xml has suppressions)
 ./gradlew run --args="path/to/some.config"   # run the simulator/monitor against a config file
 ```
 
 Requires JDK 17+ (compiled with `--release 22`); the module is
-`joev.ya6s` (see `src/main/java/module-info.java`). Compiler args include
+`org.joev.ya6s` (see `src/main/java/module-info.java`). Compiler args include
 `-Xlint:all -Werror`, so warnings fail the build — fix them rather than
 suppressing.
 
 ## Architecture
 
-### Circuit simulation model (`joev.ya6s.signals`)
+### Circuit simulation model (`org.joev.ya6s.signals`)
 
 Everything is built on two primitives:
 - `Signal`: a boolean wire. Setting its value fires `POSITIVE_EDGE` /
@@ -81,14 +81,14 @@ blocks:
 free-running execution, or can be single-stepped with `cycle()` — tests use
 single-stepping exclusively, never the threaded runner.
 
-### Expression language (`joev.ya6s.expression`)
+### Expression language (`org.joev.ya6s.expression`)
 
 Small expression tree (`Constant`, `Register`, `ArithmeticExpression`,
 `LogicExpression`, `NotExpression`, `RelationalExpression`) used to evaluate
 `break when {expression}` conditions against CPU registers (PC, A, X, Y, C,
 N, Z, V, I, D).
 
-### Monitor / REPL (`joev.ya6s.monitor`)
+### Monitor / REPL (`org.joev.ya6s.monitor`)
 
 `MonitorParser`/`Tokenizer` parse monitor command lines into `Command`
 objects (`AttachCommand`, `ReadCommand`, `WriteCommand`, `LoadCommand`,

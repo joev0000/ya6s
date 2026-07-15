@@ -72,7 +72,7 @@ a counter device, which can be used to generate periodic interrupts. The
 For example, the following command attaches a 32 kilobyte RAM device that
 starts at location 0 in the memory map:
 ```
->>> attach joev.ya6s.SRAM base=0000 size=8000
+>>> attach org.joev.ya6s.SRAM base=0000 size=8000
 ```
 
 With this, the monitor can be used to read and write to RAM:
@@ -89,7 +89,7 @@ With this, the monitor can be used to read and write to RAM:
 
 A pre-loaded ROM device can be attached. This one is 2KB, starting at $F800.
 ```
->>> attach joev.ya6s.ROM  base=F800 size=0800 file=rom.bin
+>>> attach org.joev.ya6s.ROM  base=F800 size=0800 file=rom.bin
 >>> read f800 f83f
        0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F   01234567 89ABCDEF
 F800: A9 83 8D 03 F0 A9 78 8D  00 F0 9C 01 F0 A9 03 8D  |©...ð©x. .ð..ð©..|
@@ -106,7 +106,7 @@ F80A:  9C 01 F0  STZ $F001
 
 This program expects a 16550 UART to be available at address $F000
 ```
->>> attach joev.ya6s.UART base=F000
+>>> attach org.joev.ya6s.UART base=F000
 ```
 
 When a 6502 microprocessor is reset, it will read the two byte value at $FFFC
@@ -143,9 +143,9 @@ on the command line at startup:
 $ ls
 hello.config  rom.bin
 $ cat hello.config
-attach joev.ya6s.SRAM base=0000 size=8000
-attach joev.ya6s.UART base=F000
-attach joev.ya6s.ROM  base=F800 size=0800 file=rom.bin
+attach org.joev.ya6s.SRAM base=0000 size=8000
+attach org.joev.ya6s.UART base=F000
+attach org.joev.ya6s.ROM  base=F800 size=0800 file=rom.bin
 $ ya6s hello.config
 A: $00,  X: $00,  Y: $00,  S: $00,  P: $20 (nv1bdizc) cycles: 0
 0000:  00 00     BRK #$00
@@ -174,16 +174,16 @@ in the `CLASSPATH` that has a constructor that takes the arguments
 more information about how to build a custom device.  The included devices
 are
 
-* joev.ya6s.SRAM: A RAM device.  The options are `base`, which is the first
+* org.joev.ya6s.SRAM: A RAM device.  The options are `base`, which is the first
 address (in hex) within the memory map this device listens on, and `size` the
 number of bytes (in hex) of the RAM device.
-* joev.ya6s.ROM: A ROM device. The options are `base`, which is the first
+* org.joev.ya6s.ROM: A ROM device. The options are `base`, which is the first
 address (in hex) within the memory map this devices listens on, `size` which
 is the number of bytes (in hex) of the ROM device, and `file` which is the
 name of a file that is loaded into the ROM.
-* joev.ya6s.UART: A UART device based on the widely-used 16550 UART IC. The
+* org.joev.ya6s.UART: A UART device based on the widely-used 16550 UART IC. The
 option `base` tells the device the address (in hex) of the first register.
-* joev.ya6s.Counter: An example device that counts the cycles of the computer.
+* org.joev.ya6s.Counter: An example device that counts the cycles of the computer.
 A program can set a value as 24 bit number, the base to count down, and the
 device can be configured to generate an interrupt when the counter reaches
 zero. The first three bytes are the counter value, little-endian, the fourth
@@ -307,7 +307,7 @@ use the same `Backplane`. The ya6s simulator can dynamically attach these to
 the backplane using the monitor's `attach` command.
 
 A custom device must have a public constructor that takes the arguments
-`(joev.ya6s.Backplane backplane, Map<String, String> options)`. It does not
+`(org.joev.ya6s.Backplane backplane, Map<String, String> options)`. It does not
 need to extend any other class or implement any interface. The constructor
 should register itself with the appropriate `Signal`s of the backplane, in
 particular, the `clk` clock signal.  Typically, a device will have a `tick`

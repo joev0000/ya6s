@@ -7,8 +7,8 @@ plugins {
 version = '2.0.0'
 
 application {
-  mainModule = 'joev.ya6s'
-  mainClass = 'joev.ya6s.Main'
+  mainModule = 'org.joev.ya6s'
+  mainClass = 'org.joev.ya6s.Main'
   applicationDefaultJvmArgs = ['-Djava.lang.Integer.IntegerCache.high=65535']
 }
 
@@ -64,7 +64,7 @@ spotbugs {
 
 jlink {
   options = ['--no-header-files', '--no-man-pages', '--strip-debug']
-  mergedModuleName = 'joev.ya6s.merged'
+  mergedModuleName = 'org.joev.ya6s.merged'
   imageName = name + '-' + version
   mergedModule {
     excludeRequires 'java.desktop'

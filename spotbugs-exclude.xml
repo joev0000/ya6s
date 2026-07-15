@@ -1,38 +1,38 @@
 <FindBugsFilter>
   <!-- SpotBugs does not know how to handle Records. -->
   <Match>
-    <Class name="joev.ya6s.monitor.ProfileShowCommand$1Count"/>
+    <Class name="org.joev.ya6s.monitor.ProfileShowCommand$1Count"/>
   </Match>
 
   <!-- Primitive array lookup performance is faster than unmodifiable list -->
   <Match>
-    <Class name="joev.ya6s.W65C02S"/>
+    <Class name="org.joev.ya6s.W65C02S"/>
     <Bug pattern="MS_MUTABLE_ARRAY"/>
   </Match>
 
   <!-- The Exit command exits, and that's okay. -->
   <Match>
-    <Class name="joev.ya6s.monitor.ExitCommand"/>
+    <Class name="org.joev.ya6s.monitor.ExitCommand"/>
     <Method name="execute"/>
     <Bug pattern="DM_EXIT"/>
   </Match>
 
   <!-- Exiting on real stdin EOF (Ctrl-D) is okay. -->
   <Match>
-    <Class name="joev.ya6s.monitor.Monitor"/>
+    <Class name="org.joev.ya6s.monitor.Monitor"/>
     <Method name="readCommandLine"/>
     <Bug pattern="DM_EXIT"/>
   </Match>
 
   <!-- UART constuctor calls Thread.start().  TODO: Fix this. -->
   <Match>
-    <Class name="joev.ya6s.UART"/>
+    <Class name="org.joev.ya6s.UART"/>
     <Bug pattern="SC_START_IN_CTOR"/>
   </Match>
 
   <!-- UART FIFO control register currently unused.  TODO: Fix this. -->
   <Match>
-    <Class name="joev.ya6s.UART"/>
+    <Class name="org.joev.ya6s.UART"/>
     <Bug pattern="URF_UNREAD_FIELD"/>
     <Field name="FCR"/>
   </Match>
@@ -41,7 +41,7 @@
   <Match>
     <Bug pattern="EI_EXPOSE_REP"/>
     <Field name="backplane"/>
-    <Class name="joev.ya6s.monitor.Monitor"/>
+    <Class name="org.joev.ya6s.monitor.Monitor"/>
   </Match>
 
   <!-- Backplane is intentionally shared. -->
@@ -49,16 +49,16 @@
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="backplane"/>
     <Or>
-      <Class name="joev.ya6s.Counter"/>
-      <Class name="joev.ya6s.UART"/>
-      <Class name="joev.ya6s.monitor.Monitor"/>
+      <Class name="org.joev.ya6s.Counter"/>
+      <Class name="org.joev.ya6s.UART"/>
+      <Class name="org.joev.ya6s.monitor.Monitor"/>
     </Or>
   </Match>
 
   <!-- cpu, console, and terminal are intentionally shared -->
   <Match>
     <Bug pattern="EI_EXPOSE_REP2"/>
-    <Class name="joev.ya6s.monitor.Monitor"/>
+    <Class name="org.joev.ya6s.monitor.Monitor"/>
     <Method name="&lt;init&gt;"/>
     <Or>
       <Field name="cpu"/>
@@ -70,7 +70,7 @@
   <!-- cpu is intentionally shared. -->
   <Match>
     <Bug pattern="EI_EXPOSE_REP"/>
-    <Class name="joev.ya6s.monitor.Monitor"/>
+    <Class name="org.joev.ya6s.monitor.Monitor"/>
     <Method name="cpu"/>
     <Field name="cpu"/>
   </Match>
@@ -78,14 +78,14 @@
   <!-- TODO: Check performance of making the cycles array a list. -->
   <Match>
     <Bug pattern="EI_EXPOSE_REP"/>
-    <Class name="joev.ya6s.AddressingMode"/>
+    <Class name="org.joev.ya6s.AddressingMode"/>
     <Method name="cycles"/>
   </Match>
 
   <!-- TODO: This should be cleaned up. -->
   <Match>
     <Bug pattern="MS_CANNOT_BE_FINAL"/>
-    <Class name="joev.ya6s.monitor.Monitor"/>
+    <Class name="org.joev.ya6s.monitor.Monitor"/>
     <Or>
       <Field name="ttyIn"/>
       <Field name="ttyOut"/>
@@ -95,27 +95,27 @@
   <!-- Okay to eat all exceptions when attaching. -->
   <Match>
     <Bug pattern="REC_CATCH_EXCEPTION"/>
-    <Class name="joev.ya6s.monitor.AttachCommand"/>
+    <Class name="org.joev.ya6s.monitor.AttachCommand"/>
     <Method name="execute"/>
   </Match>
 
   <!-- Setting the tick method as a field is acceptable. -->
   <Match>
     <Bug pattern="MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"/>
-    <Class name="joev.ya6s.W65C02S"/>
+    <Class name="org.joev.ya6s.W65C02S"/>
     <Method name="&lt;init&gt;"/>
   </Match>
 
   <!-- Having a non-serializable function field is acceptable. -->
   <Match>
     <Bug pattern="SE_BAD_FIELD"/>
-    <Class name="joev.ya6s.expression.ArithmeticExpression$Op"/>
+    <Class name="org.joev.ya6s.expression.ArithmeticExpression$Op"/>
     <Field name="fn"/>
   </Match>
 
   <!-- The beforeEach method is called before test execution. -->
   <Match>
     <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
-    <Class name="joev.ya6s.ROMTests"/>
+    <Class name="org.joev.ya6s.ROMTests"/>
   </Match>
 </FindBugsFilter>
