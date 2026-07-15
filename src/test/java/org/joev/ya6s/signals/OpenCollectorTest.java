@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022 Joseph Vigneau */
+/* Copyright (C) 2021-2026 Joseph Vigneau */
 
 package org.joev.ya6s.signals;
 
