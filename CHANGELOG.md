@@ -1,3 +1,8 @@
+## [2.0.0] - 2026-07-15
+
+- Replaced JNA and Termios terminal handling with JLine.
+- Moved joev.ya6s package to org.joev.ya6s.
+
 ## [1.0.2] - 2025-04-19
 ### Changed
 - Bumped version of Gradle and Spotbugs to build on Java 23.
