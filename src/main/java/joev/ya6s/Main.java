@@ -2,6 +2,7 @@
 
 package joev.ya6s;
 
+import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.StringReader;
@@ -15,6 +16,8 @@ import joev.ya6s.monitor.MonitorParser;
 import joev.ya6s.monitor.ParseException;
 import joev.ya6s.signals.Signal;
 import joev.ya6s.signals.Bus;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 public class Main {
   public static void main(String[] args) throws Exception {
@@ -30,7 +33,18 @@ public class Main {
     final Signal resb = cpu.resb();
     resb.value(true);
     backplane.be().value(true);
-    Monitor monitor = new Monitor(backplane, clock, cpu, System.in, System.out, toUartIn);
+    Terminal terminal = TerminalBuilder.builder()
+        .system(true)
+        .build();
+    Monitor monitor = new Monitor(backplane, clock, cpu, terminal, toUartIn);
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+        monitor.close();
+      }
+      catch (IOException e) {
+        // best-effort restore on shutdown
+      }
+    }));
     if(args.length > 0) {
       Files.lines(Path.of(args[0]))
         .map(String::trim)

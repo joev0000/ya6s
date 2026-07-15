@@ -21,8 +21,10 @@ repositories {
 }
 
 dependencies {
-  // https://mvnrepository.com/artifact/net.java.dev.jna/jna
-  implementation     'net.java.dev.jna:jna:5.19.1'
+  // https://mvnrepository.com/artifact/org.jline/jline-reader
+  implementation     'org.jline:jline-reader:4.3.1'
+  implementation     'org.jline:jline-terminal:4.3.1'
+  implementation     'org.jline:jline-terminal-jni:4.3.1'
 
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.14.4'
   testImplementation 'org.junit.jupiter:junit-jupiter-params:5.14.4'

@@ -17,21 +17,11 @@
     <Bug pattern="DM_EXIT"/>
   </Match>
 
-  <!-- termios is lower case so it works with JNA. -->
+  <!-- Exiting on real stdin EOF (Ctrl-D) is okay. -->
   <Match>
-    <Class name="joev.ya6s.smartline.Termios$termios"/>
-    <Or>
-      <Bug pattern="NM_CLASS_NAMING_CONVENTION"/>
-      <And>
-        <Bug pattern="UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"/>
-        <Or>
-          <Field name="c_ispeed"/>
-          <Field name="c_line"/>
-          <Field name="c_oflag"/>
-          <Field name="c_ospeed"/>
-        </Or>
-      </And>
-    </Or>
+    <Class name="joev.ya6s.monitor.Monitor"/>
+    <Method name="readCommandLine"/>
+    <Bug pattern="DM_EXIT"/>
   </Match>
 
   <!-- UART constuctor calls Thread.start().  TODO: Fix this. -->
@@ -65,7 +55,7 @@
     </Or>
   </Match>
 
-  <!-- cpu and console are intentionally shared -->
+  <!-- cpu, console, and terminal are intentionally shared -->
   <Match>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Class name="joev.ya6s.monitor.Monitor"/>
@@ -73,6 +63,7 @@
     <Or>
       <Field name="cpu"/>
       <Field name="console"/>
+      <Field name="terminal"/>
     </Or>
   </Match>
 
@@ -99,13 +90,6 @@
       <Field name="ttyIn"/>
       <Field name="ttyOut"/>
     </Or>
-  </Match>
-
-  <!-- Adding close to a shutdown hook is okay. -->
-  <Match>
-    <Bug pattern="MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"/>
-    <Class name="joev.ya6s.smartline.Smartline"/>
-    <Method name="&lt;init&gt;"/>
   </Match>
 
   <!-- Okay to eat all exceptions when attaching. -->

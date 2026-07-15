@@ -9,17 +9,23 @@ import joev.ya6s.Instruction;
 import joev.ya6s.W65C02S;
 import joev.ya6s.signals.Bus;
 import joev.ya6s.signals.Signal;
-import joev.ya6s.smartline.Smartline;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
+import org.jline.terminal.Attributes;
+import org.jline.terminal.Terminal;
+import org.jline.utils.NonBlockingReader;
 
 /**
  * A monitor for a system with a CPU and Backplane.
@@ -29,8 +35,9 @@ public class Monitor {
   private final Backplane backplane;
   private final Clock clock;
   private final W65C02S cpu;
-  private final Smartline sl;
-  private final PrintStream out;
+  private final Terminal terminal;
+  private final LineReader reader;
+  private final PrintWriter out;
   private final OutputStream console;
   private final List<Predicate<W65C02S>> breakpoints = new ArrayList<>();
   private Predicate<W65C02S> breakpoint = null;
@@ -48,15 +55,44 @@ public class Monitor {
    *
    * @param backplane the Backplane of the system
    * @param cpu the CPU of the system.
-   * @param in the input stream of the user commands.
+   * @param terminal the Terminal used for the monitor prompt and console passthrough.
+   * @param console the OutputStream that keystrokes are forwarded to while the clock is running.
    */
-  public Monitor(Backplane backplane, Clock clock, W65C02S cpu, InputStream in, OutputStream out, OutputStream console) {
+  public Monitor(Backplane backplane, Clock clock, W65C02S cpu, Terminal terminal, OutputStream console) {
     this.backplane = backplane;
     this.clock = clock;
     this.cpu = cpu;
-    this.out = (out instanceof PrintStream) ? (PrintStream)out : new PrintStream(out, true, UTF_8);
+    this.terminal = terminal;
+    this.out = terminal.writer();
     this.console = console;
-    sl = new Smartline(in, out);
+    this.reader = LineReaderBuilder.builder()
+        .terminal(terminal)
+        .variable(LineReader.HISTORY_FILE, historyFile())
+        .build();
+  }
+
+  /**
+   * Determine the XDG-compliant location of the command history file,
+   * honoring $XDG_STATE_HOME if set, defaulting to $HOME/.local/state otherwise.
+   *
+   * @return the path to the history file.
+   */
+  private static Path historyFile() {
+    String xdgStateHome = System.getenv("XDG_STATE_HOME");
+    Path stateHome = (xdgStateHome != null && !xdgStateHome.isBlank())
+        ? Path.of(xdgStateHome)
+        : Path.of(System.getProperty("user.home"), ".local", "state");
+    return stateHome.resolve("ya6s").resolve("history");
+  }
+
+  /**
+   * Save history and close the underlying Terminal.
+   *
+   * @throws IOException if the Terminal cannot be closed.
+   */
+  public void close() throws IOException {
+    reader.getHistory().save();
+    terminal.close();
   }
 
   /**
@@ -270,6 +306,26 @@ public class Monitor {
   }
 
   /**
+   * Read a command line from the terminal, retrying on Ctrl-C and exiting
+   * the process cleanly on EOF (Ctrl-D, or real stdin EOF).
+   *
+   * @return the line read.
+   */
+  private String readCommandLine() {
+    while(true) {
+      try {
+        return reader.readLine(">>> ");
+      }
+      catch (UserInterruptException e) {
+        // Ctrl-C at the prompt: redisplay prompt
+      }
+      catch (EndOfFileException e) {
+        System.exit(0);
+      }
+    }
+  }
+
+  /**
    * Run the monitor loop.  Never exits.
    */
   public void run() {
@@ -278,7 +334,6 @@ public class Monitor {
     Signal rdy = backplane.rdy();
     rdy.register(this::stopClock);
     Command command = ResetCommand.instance();
-    int c;
     while(true) {
       try {
         // Run commands one at a time until a Continue command is parsed.
@@ -286,7 +341,7 @@ public class Monitor {
           command.execute(this);
           out.format("A: $%02X,  X: $%02X,  Y: $%02X,  S: $%02X,  P: $%02X (%s) cycles: %d%n", cpu.a(), cpu.x(), cpu.y(), cpu.s(), cpu.p(), cpu.status(), cpu.cycleCount());
           out.println(disassemble((short)backplane.address().value(), 1));
-          String string = sl.readLine(">>> ");
+          String string = readCommandLine();
           parser = new MonitorParser(new StringReader(string));
           try {
             command = parser.command();
@@ -298,19 +353,31 @@ public class Monitor {
         command = NoopCommand.instance();
 
         out.println("(Ctrl-E to pause.)");
-        clock.start();
-        while(clock.running()) {
-          c = sl.read();
-          if(c == 0x05) { // ^E
-            clock.stop();
-            while(!sync.value()) {
-              clock.cycle();
+        // Terminal.enterRawMode() clears ISIG (like the old raw-mode setup),
+        // so Ctrl-C generates no signal here and simply flows to console.write
+        // below like any other byte, reaching the simulated UART as input.
+        Attributes prevAttributes = terminal.enterRawMode();
+        try {
+          clock.start();
+          while(clock.running()) {
+            int c = terminal.reader().read(100L); // blocks up to 100ms; replaces poll+sleep
+            if(c == 0x05) { // ^E
+              clock.stop();
+              while(!sync.value()) {
+                clock.cycle();
+              }
             }
+            else if(c == NonBlockingReader.EOF) {
+              break; // stdin closed while a program is running
+            }
+            else if(c >= 0) {
+              console.write(c);
+            }
+            // c == NonBlockingReader.READ_EXPIRED (-2): plain timeout, loop again
           }
-          else if(c >= 0) {
-            console.write(c);
-          }
-          Thread.sleep(100);
+        }
+        finally {
+          terminal.setAttributes(prevAttributes);
         }
 
         if(breakpoint != null) {
